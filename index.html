@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Foucault's Pendulum</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Crimson+Pro:ital,wght@0,300;0,600;1,300&display=swap');
+
+  :root {
+    --bg: #050810;
+    --panel: #0a0f1e;
+    --accent: #4fc3f7;
+    --accent2: #e040fb;
+    --gold: #ffd54f;
+    --text: #cdd6f4;
+    --muted: #6272a4;
+    --trace: rgba(79, 195, 247, 0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+
+  header {
+    width: 100%;
+    padding: 24px 32px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px solid rgba(79,195,247,0.1);
+  }
+
+  header h1 {
+    font-family: 'Crimson Pro', serif;
+    font-weight: 300;
+    font-size: clamp(1.4rem, 4vw, 2.4rem);
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  header p {
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    font-style: italic;
+  }
+
+  .main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 900px;
+    padding: 20px 16px;
+    gap: 20px;
+  }
+
+  canvas {
+    border-radius: 50%;
+    border: 1px solid rgba(79,195,247,0.2);
+    box-shadow: 0 0 60px rgba(79,195,247,0.05), inset 0 0 60px rgba(0,0,0,0.5);
+    background: radial-gradient(ellipse at center, #080d1a 0%, #030508 100%);
+    cursor: crosshair;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .ctrl-group {
+    background: var(--panel);
+    border: 1px solid rgba(79,195,247,0.1);
+    border-radius: 8px;
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 180px;
+    flex: 1;
+  }
+
+  .ctrl-group label {
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .ctrl-group .val {
+    font-size: 1rem;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  input[type=range] {
+    width: 100%;
+    -webkit-appearance: none;
+    height: 3px;
+    background: rgba(79,195,247,0.2);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(79,195,247,0.6);
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  button {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 10px 22px;
+    border: 1px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  button:hover { background: rgba(79,195,247,0.1); box-shadow: 0 0 16px rgba(79,195,247,0.2); }
+  button.active { background: var(--accent); color: var(--bg); }
+
+  button.danger {
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+  button.danger:hover { background: rgba(224,64,251,0.1); }
+
+  button.record {
+    border-color: #f28b82;
+    color: #f28b82;
+    position: relative;
+  }
+  button.record:hover { background: rgba(242,139,130,0.1); }
+  button.record.recording {
+    background: rgba(242,139,130,0.15);
+    animation: pulse-rec 1.2s infinite;
+  }
+  button.record.recording::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #f28b82;
+    border-radius: 50%;
+    margin-right: 8px;
+    animation: blink 1s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+  @keyframes pulse-rec { 0%,100%{box-shadow:0 0 0 rgba(242,139,130,0)} 50%{box-shadow:0 0 12px rgba(242,139,130,0.4)} }
+
+  .info-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 100%;
+  }
+
+  .info-card {
+    background: var(--panel);
+    border: 1px solid rgba(79,195,247,0.08);
+    border-radius: 6px;
+    padding: 12px;
+    text-align: center;
+  }
+
+  .info-card .label {
+    font-size: 0.55rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .info-card .value {
+    font-size: 0.9rem;
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  .explain {
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.95rem;
+    color: var(--muted);
+    font-style: italic;
+    text-align: center;
+    max-width: 560px;
+    line-height: 1.7;
+    padding: 0 8px;
+  }
+
+  .explain span { color: var(--accent); font-style: normal; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Foucault's Pendulum</h1>
+  <p>Proof that Earth rotates — demonstrated since 1851</p>
+</header>
+
+<div class="main">
+  <canvas id="c" width="420" height="420"></canvas>
+
+  <div class="info-row">
+    <div class="info-card">
+      <div class="label">Rotation Period</div>
+      <div class="value" id="rotPeriod">—</div>
+    </div>
+    <div class="info-card">
+      <div class="label">Swing Angle</div>
+      <div class="value" id="swingAngle">0°</div>
+    </div>
+    <div class="info-card">
+      <div class="label">Elapsed</div>
+      <div class="value" id="elapsed">0h 0m</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <label>Latitude</label>
+      <div class="val" id="latVal">48° N (Paris)</div>
+      <input type="range" id="latSlider" min="1" max="90" value="48">
+    </div>
+    <div class="ctrl-group">
+      <label>Speed</label>
+      <div class="val" id="speedVal">1×</div>
+      <input type="range" id="speedSlider" min="1" max="100" value="20">
+    </div>
+    <div class="ctrl-group">
+      <label>Trace Fade</label>
+      <div class="val" id="fadeVal">Slow</div>
+      <input type="range" id="fadeSlider" min="1" max="10" value="3">
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button id="pauseBtn" class="active">Pause</button>
+    <button class="danger" id="resetBtn">Clear Trace</button>
+    <button class="record" id="recBtn">⏺ Record</button>
+  </div>
+  <div id="recStatus" style="font-size:0.6rem;color:#f28b82;letter-spacing:0.15em;min-height:16px;text-align:center;"></div>
+
+  <p class="explain">
+    In <span>1851</span>, Léon Foucault suspended a 67-meter pendulum beneath the Panthéon dome.
+    Its swing plane rotated slowly — not because of the pendulum, but because
+    <span>Earth itself rotated beneath it</span>. The rotation rate depends on latitude:
+    fastest at the poles, zero at the equator.
+  </p>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const cx = W/2, cy = H/2;
+const R = W/2 - 10; // floor radius
+
+let lat = 48;
+let speedMult = 20;
+let fadeMult = 3;
+let paused = false;
+let simTime = 0; // seconds of real Earth time simulated
+
+// Foucault rotation rate: Ω_z = Ω_Earth * sin(lat)
+const EARTH_ROT = 2 * Math.PI / 86400; // rad/s
+
+// Pendulum state
+let pendAngle = 0.3; // initial swing angle from vertical (rad)
+let pendVel = 0;
+const PEND_LEN = 67; // meters (symbolic)
+const g = 9.81;
+const omega_pend = Math.sqrt(g / PEND_LEN); // pendulum angular frequency
+
+// Foucault plane rotation accumulated
+let planeAngle = 0;
+
+// Trace
+const tracePoints = [];
+const MAX_TRACE = 3000;
+
+// Offscreen for trace
+const offCanvas = document.createElement('canvas');
+offCanvas.width = W; offCanvas.height = H;
+const offCtx = offCanvas.getContext('2d');
+offCtx.fillStyle = '#050810';
+offCtx.fillRect(0,0,W,H);
+
+let lastTime = null;
+
+function getOmegaFoucault() {
+  return EARTH_ROT * Math.sin(lat * Math.PI / 180);
+}
+
+function getRotationPeriod() {
+  const omegaF = getOmegaFoucault();
+  if (omegaF === 0) return '∞ (equator)';
+  const T = 2 * Math.PI / omegaF; // seconds
+  const hours = T / 3600;
+  return hours.toFixed(1) + 'h';
+}
+
+function latLabel(l) {
+  const cities = [
+    {l:90, n:'North Pole'}, {l:78, n:'Svalbard'},
+    {l:60, n:'Helsinki'}, {l:51, n:'London'},
+    {l:48, n:'Paris'}, {l:41, n:'Madrid'},
+    {l:35, n:'Tokyo'}, {l:23, n:'Mumbai'},
+    {l:1, n:'Equator'}
+  ];
+  let closest = cities[0];
+  let minD = Math.abs(l - cities[0].l);
+  for (let c of cities) {
+    const d = Math.abs(l - c.l);
+    if (d < minD) { minD = d; closest = c; }
+  }
+  return `${l}° N (${closest.n})`;
+}
+
+function drawFloor() {
+  // Concentric rings
+  for (let i = 1; i <= 5; i++) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, R * i/5, 0, Math.PI*2);
+    ctx.strokeStyle = `rgba(79,195,247,${0.04 + i*0.015})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+  // Radial lines (compass-like)
+  for (let a = 0; a < 360; a += 30) {
+    const rad = a * Math.PI / 180;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(rad)*R*0.15, cy + Math.sin(rad)*R*0.15);
+    ctx.lineTo(cx + Math.cos(rad)*R, cy + Math.sin(rad)*R);
+    ctx.strokeStyle = `rgba(79,195,247,0.06)`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+  // Outer ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, Math.PI*2);
+  ctx.strokeStyle = 'rgba(79,195,247,0.15)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  // Center dot
+  ctx.beginPath();
+  ctx.arc(cx, cy, 4, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(79,195,247,0.4)';
+  ctx.fill();
+}
+
+function getBobPos() {
+  // Bob position in pendulum plane, then rotated by planeAngle
+  const swingRadius = Math.sin(pendAngle) * R * 0.72;
+  // x in swing plane
+  const localX = swingRadius;
+  // rotate by planeAngle
+  const x = cx + localX * Math.cos(planeAngle);
+  const y = cy + localX * Math.sin(planeAngle);
+  return {x, y};
+}
+
+function drawPendulum() {
+  const bob = getBobPos();
+
+  // Wire
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(bob.x, bob.y);
+  ctx.strokeStyle = 'rgba(79,195,247,0.5)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Bob glow
+  const grad = ctx.createRadialGradient(bob.x, bob.y, 0, bob.x, bob.y, 14);
+  grad.addColorStop(0, 'rgba(79,195,247,0.9)');
+  grad.addColorStop(0.5, 'rgba(79,195,247,0.3)');
+  grad.addColorStop(1, 'rgba(79,195,247,0)');
+  ctx.beginPath();
+  ctx.arc(bob.x, bob.y, 14, 0, Math.PI*2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(bob.x, bob.y, 5, 0, Math.PI*2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+}
+
+function drawTrace() {
+  ctx.drawImage(offCanvas, 0, 0);
+}
+
+function addTracePoint() {
+  const bob = getBobPos();
+  tracePoints.push({x: bob.x, y: bob.y});
+  if (tracePoints.length > MAX_TRACE) tracePoints.shift();
+
+  // Draw on offscreen
+  if (tracePoints.length > 1) {
+    const p1 = tracePoints[tracePoints.length - 2];
+    const p2 = tracePoints[tracePoints.length - 1];
+    offCtx.beginPath();
+    offCtx.moveTo(p1.x, p1.y);
+    offCtx.lineTo(p2.x, p2.y);
+    offCtx.strokeStyle = 'rgba(79,195,247,0.5)';
+    offCtx.lineWidth = 1.2;
+    offCtx.stroke();
+  }
+
+  // Fade offscreen slightly
+  offCtx.fillStyle = `rgba(5,8,16,${0.002 * fadeMult})`;
+  offCtx.fillRect(0,0,W,H);
+}
+
+function update(dt) {
+  // dt in real seconds, scaled
+  const simDt = dt * speedMult;
+  simTime += simDt;
+
+  // Pendulum physics (simple harmonic)
+  pendVel += -omega_pend * omega_pend * pendAngle * simDt;
+  pendVel *= (1 - 0.001 * simDt); // tiny damping
+  pendAngle += pendVel * simDt;
+
+  // Foucault rotation
+  const omegaF = getOmegaFoucault();
+  planeAngle += omegaF * simDt;
+}
+
+function updateInfo() {
+  document.getElementById('rotPeriod').textContent = getRotationPeriod();
+  document.getElementById('swingAngle').textContent = (planeAngle * 180 / Math.PI % 360).toFixed(1) + '°';
+  const h = Math.floor(simTime / 3600);
+  const m = Math.floor((simTime % 3600) / 60);
+  document.getElementById('elapsed').textContent = `${h}h ${m}m`;
+}
+
+function render(ts) {
+  if (!lastTime) lastTime = ts;
+  const dt = Math.min((ts - lastTime) / 1000, 0.05);
+  lastTime = ts;
+
+  if (!paused) {
+    update(dt);
+    addTracePoint();
+  }
+
+  ctx.clearRect(0,0,W,H);
+  drawTrace();
+  drawFloor();
+  drawPendulum();
+  updateInfo();
+
+  requestAnimationFrame(render);
+}
+
+// Controls
+document.getElementById('latSlider').addEventListener('input', e => {
+  lat = parseInt(e.target.value);
+  document.getElementById('latVal').textContent = latLabel(lat);
+});
+
+document.getElementById('speedSlider').addEventListener('input', e => {
+  speedMult = parseInt(e.target.value);
+  document.getElementById('speedVal').textContent = speedMult + '×';
+});
+
+document.getElementById('fadeSlider').addEventListener('input', e => {
+  fadeMult = parseInt(e.target.value);
+  const labels = ['','Very Slow','Slow','Medium','Fast','','','','','','Quick'];
+  document.getElementById('fadeVal').textContent = labels[fadeMult] || fadeMult;
+});
+
+document.getElementById('pauseBtn').addEventListener('click', function() {
+  paused = !paused;
+  this.textContent = paused ? 'Resume' : 'Pause';
+  this.classList.toggle('active', !paused);
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  tracePoints.length = 0;
+  offCtx.fillStyle = '#050810';
+  offCtx.fillRect(0,0,W,H);
+  planeAngle = 0;
+  simTime = 0;
+  pendAngle = 0.3;
+  pendVel = 0;
+});
+
+// Recording
+let mediaRecorder = null;
+let recordedChunks = [];
+let isRecording = false;
+
+document.getElementById('recBtn').addEventListener('click', function() {
+  if (!isRecording) {
+    // Start recording
+    recordedChunks = [];
+    const stream = canvas.captureStream(30);
+    const options = { mimeType: 'video/webm;codecs=vp9' };
+    try {
+      mediaRecorder = new MediaRecorder(stream, options);
+    } catch(e) {
+      mediaRecorder = new MediaRecorder(stream);
+    }
+    mediaRecorder.ondataavailable = e => {
+      if (e.data.size > 0) recordedChunks.push(e.data);
+    };
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(recordedChunks, { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'foucault_simulation.webm';
+      a.click();
+      URL.revokeObjectURL(url);
+      document.getElementById('recStatus').textContent = '✓ VIDEO DOWNLOADED';
+      setTimeout(() => document.getElementById('recStatus').textContent = '', 3000);
+    };
+    mediaRecorder.start();
+    isRecording = true;
+    this.textContent = '⏹ Stop & Save';
+    this.classList.add('recording');
+    document.getElementById('recStatus').textContent = '● RECORDING...';
+    if (paused) { paused = false; document.getElementById('pauseBtn').textContent = 'Pause'; document.getElementById('pauseBtn').classList.add('active'); }
+  } else {
+    // Stop recording
+    mediaRecorder.stop();
+    isRecording = false;
+    this.textContent = '⏺ Record';
+    this.classList.remove('recording');
+    document.getElementById('recStatus').textContent = 'SAVING...';
+  }
+});
+document.getElementById('latVal').textContent = latLabel(lat);
+document.getElementById('speedVal').textContent = speedMult + '×';
+document.getElementById('fadeVal').textContent = 'Medium';
+document.getElementById('rotPeriod').textContent = getRotationPeriod();
+
+requestAnimationFrame(render);
+</script>
+</body>
+</html>
