@@ -1,0 +1,266 @@
+import { useState, useMemo } from "react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
+
+// Runge-Kutta 4th order solver for: m*x'' + c*x' + k*x = F(t)
+function solveRK4({ m, c, k, F0, omega_f, x0, v0, dt, tEnd }) {
+  const steps = Math.floor(tEnd / dt);
+  const data = [];
+
+  let x = x0;
+  let v = v0;
+
+  const accel = (t, x, v) => (F0 * Math.sin(omega_f * t) - c * v - k * x) / m;
+
+  for (let i = 0; i <= steps; i++) {
+    const t = i * dt;
+
+    // Natural frequency & damping ratio for annotation
+    const omega_n = Math.sqrt(k / m);
+    const zeta = c / (2 * Math.sqrt(m * k));
+
+    data.push({
+      t: parseFloat(t.toFixed(3)),
+      x: parseFloat(x.toFixed(5)),
+    });
+
+    // RK4
+    const k1v = accel(t, x, v);
+    const k1x = v;
+
+    const k2v = accel(t + dt / 2, x + k1x * dt / 2, v + k1v * dt / 2);
+    const k2x = v + k1v * dt / 2;
+
+    const k3v = accel(t + dt / 2, x + k2x * dt / 2, v + k2v * dt / 2);
+    const k3x = v + k2v * dt / 2;
+
+    const k4v = accel(t + dt, x + k3x * dt, v + k3v * dt);
+    const k4x = v + k3v * dt;
+
+    v += (dt / 6) * (k1v + 2 * k2v + 2 * k3v + k4v);
+    x += (dt / 6) * (k1x + 2 * k2x + 2 * k3x + k4x);
+  }
+
+  return data;
+}
+
+// Simple FFT magnitude spectrum
+function computeFFT(data, dt) {
+  const N = data.length;
+  const freqData = [];
+  const maxFreq = 1 / (2 * dt); // Nyquist
+
+  for (let k = 0; k < N / 2; k++) {
+    const freq = k / (N * dt);
+    if (freq > 20) break;
+    let re = 0, im = 0;
+    for (let n = 0; n < N; n++) {
+      const angle = (2 * Math.PI * k * n) / N;
+      re += data[n].x * Math.cos(angle);
+      im -= data[n].x * Math.sin(angle);
+    }
+    const mag = (2 / N) * Math.sqrt(re * re + im * im);
+    freqData.push({ freq: parseFloat(freq.toFixed(3)), mag: parseFloat(mag.toFixed(6)) });
+  }
+  return freqData;
+}
+
+const BLUE = "#2E75B6";
+const RED  = "#E05A4F";
+const NAVY = "#1A3C5E";
+
+function Slider({ label, value, min, max, step, unit, onChange, info }) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontWeight: 600, fontSize: 13, color: NAVY }}>{label}</span>
+        <span style={{ fontSize: 13, color: BLUE, fontWeight: 700 }}>{value} <span style={{ color: "#888", fontWeight: 400 }}>{unit}</span></span>
+      </div>
+      <input
+        type="range" min={min} max={max} step={step} value={value}
+        onChange={e => onChange(parseFloat(e.target.value))}
+        style={{ width: "100%", accentColor: BLUE, cursor: "pointer" }}
+      />
+      {info && <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>{info}</div>}
+    </div>
+  );
+}
+
+export default function DynamicSystem() {
+  const [m, setM] = useState(1);
+  const [k, setK] = useState(10);
+  const [c, setC] = useState(0.5);
+  const [F0, setF0] = useState(1);
+  const [omegaF, setOmegaF] = useState(2);
+  const [tab, setTab] = useState("time");
+
+  const omega_n = Math.sqrt(k / m);
+  const zeta    = c / (2 * Math.sqrt(m * k));
+  const fn_hz   = omega_n / (2 * Math.PI);
+
+  let damping_label = "Az Sönümlü";
+  let damping_color = BLUE;
+  if (zeta >= 1) { damping_label = "Aşırı Sönümlü"; damping_color = "#888"; }
+  else if (zeta >= 0.7) { damping_label = "Kritik Sönümlü"; damping_color = "#E07F2E"; }
+  else if (zeta < 0.05) { damping_label = "⚠️ Rezonansa Yakın!"; damping_color = RED; }
+
+  const timeData = useMemo(() => solveRK4({
+    m, c, k, F0, omega_f: omegaF, x0: 0, v0: 0, dt: 0.02, tEnd: 20
+  }), [m, c, k, F0, omegaF]);
+
+  const fftData = useMemo(() => {
+    // Use last 512 points for FFT
+    const slice = timeData.slice(-512);
+    return computeFFT(slice, 0.02);
+  }, [timeData]);
+
+  const maxDisp = Math.max(...timeData.map(d => Math.abs(d.x))).toFixed(4);
+
+  return (
+    <div style={{ fontFamily: "Arial, sans-serif", background: "#F5F7FA", minHeight: "100vh", padding: 16 }}>
+      {/* Header */}
+      <div style={{ background: NAVY, borderRadius: 10, padding: "16px 20px", marginBottom: 16, color: "#fff" }}>
+        <div style={{ fontSize: 18, fontWeight: 700 }}>Dinamik Sistem Simülasyonu</div>
+        <div style={{ fontSize: 12, color: "#B0CAE8", marginTop: 4 }}>
+          Yay–Kütle–Sönümleyici &nbsp;|&nbsp; mẍ + cẋ + kx = F₀·sin(ω_f·t)
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+        {/* Left panel – controls */}
+        <div style={{ background: "#fff", borderRadius: 10, padding: 18, flex: "0 0 240px", boxShadow: "0 1px 6px rgba(0,0,0,0.08)" }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 12, borderBottom: `2px solid ${BLUE}`, paddingBottom: 6 }}>
+            📐 Sistem Parametreleri
+          </div>
+          <Slider label="Kütle (m)" value={m} min={0.5} max={5} step={0.1} unit="kg" onChange={setM} info="Büyük kütle → yavaş titreşim" />
+          <Slider label="Yay Sabiti (k)" value={k} min={1} max={100} step={1} unit="N/m" onChange={setK} info="Sertlik artar → frekans artar" />
+          <Slider label="Sönüm (c)" value={c} min={0.05} max={10} step={0.05} unit="N·s/m" onChange={setC} info="Büyük c → hızlı durma" />
+
+          <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, margin: "14px 0 10px", borderBottom: `2px solid ${BLUE}`, paddingBottom: 6 }}>
+            🔄 Dış Kuvvet F(t)
+          </div>
+          <Slider label="Genlik (F₀)" value={F0} min={0} max={10} step={0.1} unit="N" onChange={setF0} />
+          <Slider label="Frekans (ω_f)" value={omegaF} min={0.1} max={15} step={0.1} unit="rad/s" onChange={setOmegaF}
+            info={`Doğal frekans: ${omega_n.toFixed(2)} rad/s`} />
+
+          {/* System metrics */}
+          <div style={{ background: "#EEF4FB", borderRadius: 8, padding: 12, marginTop: 10, fontSize: 12 }}>
+            <div style={{ marginBottom: 6 }}>
+              <span style={{ color: "#666" }}>Doğal frekans ωₙ:</span>
+              <span style={{ float: "right", fontWeight: 700, color: NAVY }}>{omega_n.toFixed(2)} rad/s</span>
+            </div>
+            <div style={{ marginBottom: 6 }}>
+              <span style={{ color: "#666" }}>fₙ:</span>
+              <span style={{ float: "right", fontWeight: 700, color: NAVY }}>{fn_hz.toFixed(3)} Hz</span>
+            </div>
+            <div style={{ marginBottom: 6 }}>
+              <span style={{ color: "#666" }}>Sönüm oranı ζ:</span>
+              <span style={{ float: "right", fontWeight: 700, color: NAVY }}>{zeta.toFixed(3)}</span>
+            </div>
+            <div style={{ marginBottom: 6 }}>
+              <span style={{ color: "#666" }}>Maks. deplasman:</span>
+              <span style={{ float: "right", fontWeight: 700, color: RED }}>{maxDisp} m</span>
+            </div>
+            <div style={{ marginTop: 8, padding: "5px 8px", background: damping_color + "22", borderRadius: 6, color: damping_color, fontWeight: 700, textAlign: "center" }}>
+              {damping_label}
+            </div>
+          </div>
+        </div>
+
+        {/* Right panel – charts */}
+        <div style={{ flex: 1, minWidth: 280 }}>
+          {/* Tabs */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+            {[["time","⏱ Zaman Cevabı"],["fft","📊 FFT Spektrumu"]].map(([id, lbl]) => (
+              <button key={id} onClick={() => setTab(id)}
+                style={{ padding: "7px 16px", borderRadius: 7, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 13,
+                  background: tab === id ? BLUE : "#fff", color: tab === id ? "#fff" : NAVY,
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
+                {lbl}
+              </button>
+            ))}
+          </div>
+
+          {tab === "time" && (
+            <div style={{ background: "#fff", borderRadius: 10, padding: 16, boxShadow: "0 1px 6px rgba(0,0,0,0.08)" }}>
+              <div style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>
+                Deplasman x(t) — ilk 20 saniye | x₀=0, v₀=0
+              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={timeData.filter((_, i) => i % 2 === 0)} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+                  <XAxis dataKey="t" label={{ value: "Zaman (s)", position: "insideBottom", offset: -2, fontSize: 11 }} tick={{ fontSize: 11 }} />
+                  <YAxis label={{ value: "x (m)", angle: -90, position: "insideLeft", fontSize: 11 }} tick={{ fontSize: 11 }} />
+                  <Tooltip formatter={(v) => [`${v} m`, "Deplasman"]} labelFormatter={l => `t = ${l} s`} />
+                  <ReferenceLine y={0} stroke="#bbb" />
+                  <Line type="monotone" dataKey="x" dot={false} stroke={BLUE} strokeWidth={1.8} />
+                </LineChart>
+              </ResponsiveContainer>
+              {/* Visual system diagram */}
+              <div style={{ marginTop: 14, padding: 12, background: "#F5F7FA", borderRadius: 8, textAlign: "center" }}>
+                <svg width="280" height="80" viewBox="0 0 280 80">
+                  {/* Wall */}
+                  <rect x="0" y="10" width="12" height="60" fill={NAVY} rx="2"/>
+                  {/* Spring */}
+                  {[...Array(7)].map((_, i) => (
+                    <line key={i} x1={12 + i*15} y1={i%2===0?30:50} x2={12+(i+1)*15} y2={i%2===0?50:30} stroke={BLUE} strokeWidth="2"/>
+                  ))}
+                  <line x1="12" y1="40" x2="20" y2="40" stroke={BLUE} strokeWidth="2"/>
+                  <line x1="117" y1="40" x2="125" y2="40" stroke={BLUE} strokeWidth="2"/>
+                  <text x="55" y="70" textAnchor="middle" fontSize="11" fill={BLUE}>k = {k}</text>
+                  {/* Damper */}
+                  <line x1="125" y1="30" x2="125" y2="50" stroke="#888" strokeWidth="2"/>
+                  <rect x="125" y="33" width="30" height="14" fill="none" stroke="#888" strokeWidth="2"/>
+                  <line x1="140" y1="27" x2="140" y2="33" stroke="#888" strokeWidth="2"/>
+                  <line x1="155" y1="40" x2="165" y2="40" stroke="#888" strokeWidth="2"/>
+                  <text x="140" y="70" textAnchor="middle" fontSize="11" fill="#888">c = {c}</text>
+                  {/* Mass */}
+                  <rect x="165" y="25" width="50" height="30" fill={NAVY} rx="4"/>
+                  <text x="190" y="44" textAnchor="middle" fontSize="12" fill="#fff" fontWeight="bold">m={m}</text>
+                  {/* Force arrow */}
+                  <line x1="215" y1="40" x2="240" y2="40" stroke={RED} strokeWidth="2.5" markerEnd="url(#arrow)"/>
+                  <defs>
+                    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                      <path d="M0,0 L0,6 L8,3 z" fill={RED}/>
+                    </marker>
+                  </defs>
+                  <text x="248" y="44" fontSize="11" fill={RED}>F(t)</text>
+                </svg>
+              </div>
+            </div>
+          )}
+
+          {tab === "fft" && (
+            <div style={{ background: "#fff", borderRadius: 10, padding: 16, boxShadow: "0 1px 6px rgba(0,0,0,0.08)" }}>
+              <div style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>
+                Frekans Spektrumu (FFT) — pik = baskın titreşim frekansı
+              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={fftData} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+                  <XAxis dataKey="freq" label={{ value: "Frekans (Hz)", position: "insideBottom", offset: -2, fontSize: 11 }} tick={{ fontSize: 11 }} />
+                  <YAxis label={{ value: "Genlik", angle: -90, position: "insideLeft", fontSize: 11 }} tick={{ fontSize: 11 }} />
+                  <Tooltip formatter={(v) => [`${v.toFixed(5)}`, "Genlik"]} labelFormatter={l => `${l} Hz`} />
+                  <ReferenceLine x={fn_hz} stroke={RED} strokeDasharray="4 2" label={{ value: `fₙ=${fn_hz.toFixed(2)}Hz`, fill: RED, fontSize: 10 }}/>
+                  <Line type="monotone" dataKey="mag" dot={false} stroke={BLUE} strokeWidth={1.8} />
+                </LineChart>
+              </ResponsiveContainer>
+              <div style={{ fontSize: 12, color: "#666", marginTop: 10, padding: "8px 12px", background: "#FFF3F3", borderRadius: 8 }}>
+                🔴 Kırmızı çizgi = doğal frekans fₙ = <strong>{fn_hz.toFixed(3)} Hz</strong>. 
+                Eğer uyarı frekansı (ω_f) buraya yaklaşırsa pik büyür → <strong>rezonans!</strong>
+              </div>
+            </div>
+          )}
+
+          {/* Explanation box */}
+          <div style={{ background: "#fff", borderRadius: 10, padding: 14, marginTop: 12, boxShadow: "0 1px 6px rgba(0,0,0,0.08)", fontSize: 12, color: "#444", lineHeight: 1.7 }}>
+            <strong style={{ color: NAVY }}>Ne görüyorsun?</strong><br/>
+            <strong>ζ &lt; 1</strong> → Sönümlü salınım (makineler genelde burada çalışır)<br/>
+            <strong>ζ ≈ 0</strong> → Sönümsüz → sistem sonsuza titreşir<br/>
+            <strong>ω_f = ωₙ</strong> → Rezonans → genlik patlar, rulman/mil kırılır<br/>
+            <strong>FFT sekmesi</strong> → Hangi frekansta ne kadar titreşiyor? Rulman arıza tespiti bu prensiple çalışır.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
