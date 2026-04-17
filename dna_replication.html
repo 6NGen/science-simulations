@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DNA Replication</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Crimson+Pro:ital,wght@0,300;0,600;1,300&display=swap');
+
+  :root {
+    --bg: #030a0a;
+    --panel: #071212;
+    --a: #00e5a0;
+    --t: #ff6b6b;
+    --g: #4fc3f7;
+    --c: #ffd54f;
+    --text: #b2dfdb;
+    --muted: #4a7a76;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+
+  header {
+    width: 100%;
+    padding: 20px 24px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px solid rgba(0,229,160,0.1);
+  }
+
+  header h1 {
+    font-family: 'Crimson Pro', serif;
+    font-weight: 300;
+    font-size: clamp(1.3rem, 4vw, 2.2rem);
+    letter-spacing: 0.15em;
+    color: var(--a);
+    text-transform: uppercase;
+  }
+
+  header p {
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+  }
+
+  .main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 860px;
+    padding: 16px;
+    gap: 16px;
+  }
+
+  canvas {
+    border-radius: 12px;
+    border: 1px solid rgba(0,229,160,0.15);
+    box-shadow: 0 0 40px rgba(0,229,160,0.04);
+    background: #030a0a;
+    width: 100%;
+    max-width: 820px;
+    height: auto;
+  }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .leg-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+  }
+
+  .leg-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .info-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 100%;
+  }
+
+  .info-card {
+    background: var(--panel);
+    border: 1px solid rgba(0,229,160,0.08);
+    border-radius: 6px;
+    padding: 10px;
+    text-align: center;
+  }
+
+  .info-card .label {
+    font-size: 0.52rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .info-card .value {
+    font-size: 0.85rem;
+    color: var(--a);
+    font-weight: 700;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .ctrl-group {
+    background: var(--panel);
+    border: 1px solid rgba(0,229,160,0.1);
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    min-width: 160px;
+  }
+
+  .ctrl-group label {
+    font-size: 0.58rem;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .ctrl-group .val {
+    font-size: 0.9rem;
+    color: var(--a);
+    font-weight: 700;
+  }
+
+  input[type=range] {
+    width: 100%;
+    -webkit-appearance: none;
+    height: 3px;
+    background: rgba(0,229,160,0.2);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 13px;
+    height: 13px;
+    background: var(--a);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(0,229,160,0.5);
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  button {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 9px 20px;
+    border: 1px solid var(--a);
+    background: transparent;
+    color: var(--a);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  button:hover { background: rgba(0,229,160,0.1); }
+  button.active { background: var(--a); color: var(--bg); }
+
+  .stage-label {
+    font-family: 'Crimson Pro', serif;
+    font-size: 1rem;
+    color: var(--a);
+    font-style: italic;
+    letter-spacing: 0.1em;
+    text-align: center;
+    min-height: 24px;
+  }
+
+  .explain {
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.9rem;
+    color: var(--muted);
+    font-style: italic;
+    text-align: center;
+    max-width: 560px;
+    line-height: 1.7;
+  }
+
+  .explain span { color: var(--a); font-style: normal; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>DNA Replication</h1>
+  <p>How a single cell copies 3 billion base pairs in hours</p>
+</header>
+
+<div class="main">
+  <div class="legend">
+    <div class="leg-item"><div class="leg-dot" style="background:#00e5a0"></div>Adenine (A)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#ff6b6b"></div>Thymine (T)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#4fc3f7"></div>Guanine (G)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#ffd54f"></div>Cytosine (C)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#b39ddb"></div>Helicase</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#f48fb1"></div>Polymerase</div>
+  </div>
+
+  <canvas id="c" width="820" height="440"></canvas>
+
+  <div class="stage-label" id="stageLabel">Initializing...</div>
+
+  <div class="info-row">
+    <div class="info-card">
+      <div class="label">Base Pairs Copied</div>
+      <div class="value" id="bpCount">0</div>
+    </div>
+    <div class="info-card">
+      <div class="label">Stage</div>
+      <div class="value" id="stageNum">1 / 3</div>
+    </div>
+    <div class="info-card">
+      <div class="label">Accuracy</div>
+      <div class="value">99.9999%</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <label>Speed</label>
+      <div class="val" id="speedVal">1×</div>
+      <input type="range" id="speedSlider" min="1" max="5" value="2">
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button id="pauseBtn" class="active">Pause</button>
+    <button id="restartBtn">Restart</button>
+  </div>
+
+  <p class="explain">
+    Every time a cell divides, it must copy <span>3 billion</span> base pairs of DNA.
+    <span>Helicase</span> unwinds the double helix. <span>DNA Polymerase</span> reads each strand
+    and builds a perfect complementary copy. A always pairs with T. G always pairs with C.
+    The result: two identical DNA molecules from one.
+  </p>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+const BASES = ['A','T','G','C'];
+const BASE_COLOR = { A:'#00e5a0', T:'#ff6b6b', G:'#4fc3f7', C:'#ffd54f' };
+const COMPLEMENT = { A:'T', T:'A', G:'C', C:'G' };
+
+// Generate a sequence
+const SEQ_LEN = 28;
+let sequence = [];
+for (let i = 0; i < SEQ_LEN; i++) {
+  sequence.push(BASES[Math.floor(Math.random() * 4)]);
+}
+
+let paused = false;
+let speedMult = 2;
+let animT = 0; // 0 to 1 overall progress
+let bpCopied = 0;
+
+// Stages:
+// 0: Double helix shown, helicase approaches
+// 1: Helicase unwinds, fork opens
+// 2: Polymerase builds new strands
+
+let stage = 0;
+let stageT = 0; // 0 to 1 within stage
+let helicaseX = 0;
+let forkOpen = 0; // 0=closed, 1=fully open
+let newStrand1 = []; // top new strand bases added
+let newStrand2 = []; // bottom new strand bases added
+
+const stageDuration = [2.5, 4, 6]; // seconds per stage
+
+let lastTime = null;
+
+// Layout
+const DNA_Y = H / 2;
+const DNA_START_X = 40;
+const DNA_END_X = W - 40;
+const DNA_WIDTH = DNA_END_X - DNA_START_X;
+const BASE_SPACING = DNA_WIDTH / (SEQ_LEN - 1);
+const HELIX_AMP = 36;
+const HELIX_FREQ = 2; // full waves
+
+function getHelixY(i, strand, openFraction, forkIndex) {
+  const x = DNA_START_X + i * BASE_SPACING;
+  const phase = (i / (SEQ_LEN - 1)) * Math.PI * 2 * HELIX_FREQ;
+  const baseAmp = HELIX_AMP;
+  
+  let amp = baseAmp;
+  if (i >= forkIndex) {
+    // Open up
+    const openAmount = Math.min(1, (i - forkIndex) / 3) * openFraction;
+    amp = baseAmp * (1 - openAmount * 0.7) + baseAmp * openAmount * 1.3;
+  }
+  
+  if (strand === 0) return DNA_Y - Math.sin(phase) * amp;
+  else return DNA_Y + Math.sin(phase) * amp;
+}
+
+function drawBackbone(forkIndex, openFraction) {
+  // Strand 1 (top)
+  ctx.beginPath();
+  for (let i = 0; i < SEQ_LEN; i++) {
+    const x = DNA_START_X + i * BASE_SPACING;
+    const y = getHelixY(i, 0, openFraction, forkIndex);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = 'rgba(0,229,160,0.5)';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // Strand 2 (bottom)
+  ctx.beginPath();
+  for (let i = 0; i < SEQ_LEN; i++) {
+    const x = DNA_START_X + i * BASE_SPACING;
+    const y = getHelixY(i, 1, openFraction, forkIndex);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = 'rgba(255,107,107,0.5)';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+}
+
+function drawBonds(forkIndex, openFraction) {
+  for (let i = 0; i < SEQ_LEN; i++) {
+    if (i >= forkIndex && openFraction > 0.3) continue;
+    const x = DNA_START_X + i * BASE_SPACING;
+    const y1 = getHelixY(i, 0, openFraction, forkIndex);
+    const y2 = getHelixY(i, 1, openFraction, forkIndex);
+    
+    const dist = Math.abs(y2 - y1);
+    if (dist < 20) {
+      ctx.beginPath();
+      ctx.moveTo(x, y1);
+      ctx.lineTo(x, y2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  }
+}
+
+function drawBases(forkIndex, openFraction) {
+  for (let i = 0; i < SEQ_LEN; i++) {
+    const x = DNA_START_X + i * BASE_SPACING;
+    const base = sequence[i];
+    const comp = COMPLEMENT[base];
+
+    // Top base
+    const y1 = getHelixY(i, 0, openFraction, forkIndex);
+    ctx.beginPath();
+    ctx.arc(x, y1, 5, 0, Math.PI * 2);
+    ctx.fillStyle = BASE_COLOR[base];
+    ctx.fill();
+
+    // Bottom base (only if not opened)
+    if (!(i >= forkIndex && openFraction > 0.5)) {
+      const y2 = getHelixY(i, 1, openFraction, forkIndex);
+      ctx.beginPath();
+      ctx.arc(x, y2, 5, 0, Math.PI * 2);
+      ctx.fillStyle = BASE_COLOR[comp];
+      ctx.fill();
+    }
+
+    // Labels
+    ctx.font = '7px Space Mono';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.fillText(base, x, y1 + 3);
+    if (!(i >= forkIndex && openFraction > 0.5)) {
+      const y2 = getHelixY(i, 1, openFraction, forkIndex);
+      ctx.fillText(comp, x, y2 + 3);
+    }
+  }
+}
+
+function drawHelicase(x) {
+  const r = 18;
+  const grad = ctx.createRadialGradient(x, DNA_Y, 0, x, DNA_Y, r);
+  grad.addColorStop(0, 'rgba(179,157,219,0.9)');
+  grad.addColorStop(1, 'rgba(179,157,219,0.1)');
+  ctx.beginPath();
+  ctx.arc(x, DNA_Y, r, 0, Math.PI * 2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.strokeStyle = '#b39ddb';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.font = '7px Space Mono';
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.fillText('HEL', x, DNA_Y + 3);
+}
+
+function drawPolymerase(x, strand) {
+  const yOffset = strand === 0 ? -28 : 28;
+  const px = x;
+  const py = DNA_Y + yOffset;
+  const r = 14;
+  const grad = ctx.createRadialGradient(px, py, 0, px, py, r);
+  grad.addColorStop(0, 'rgba(244,143,177,0.9)');
+  grad.addColorStop(1, 'rgba(244,143,177,0.1)');
+  ctx.beginPath();
+  ctx.arc(px, py, r, 0, Math.PI * 2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.strokeStyle = '#f48fb1';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.font = '6px Space Mono';
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.fillText('POL', px, py + 2);
+}
+
+function drawNewStrands(forkIndex, openFraction) {
+  if (openFraction < 0.5) return;
+
+  // New top strand (complement of top original = complements going left from fork)
+  for (let i = 0; i < newStrand1.length && i < forkIndex; i++) {
+    const idx = forkIndex - 1 - i;
+    if (idx < 0) break;
+    const x = DNA_START_X + idx * BASE_SPACING;
+    const y = getHelixY(idx, 0, openFraction, forkIndex) - 16;
+    const base = newStrand1[i];
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = BASE_COLOR[base];
+    ctx.globalAlpha = 0.8;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.font = '7px Space Mono';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.fillText(base, x, y + 3);
+  }
+
+  // New bottom strand
+  for (let i = 0; i < newStrand2.length && i < forkIndex; i++) {
+    const idx = forkIndex - 1 - i;
+    if (idx < 0) break;
+    const x = DNA_START_X + idx * BASE_SPACING;
+    const y = getHelixY(idx, 1, openFraction, forkIndex) + 16;
+    const base = newStrand2[i];
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = BASE_COLOR[base];
+    ctx.globalAlpha = 0.8;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.font = '7px Space Mono';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.fillText(base, x, y + 3);
+  }
+}
+
+function getStageLabel() {
+  if (stage === 0) return 'Stage 1: Helicase recognizes the origin of replication';
+  if (stage === 1) return 'Stage 2: Helicase unwinds the double helix — creating the replication fork';
+  if (stage === 2) return 'Stage 3: DNA Polymerase builds new complementary strands';
+  return 'Replication Complete ✓';
+}
+
+function render(ts) {
+  if (!lastTime) lastTime = ts;
+  const dt = Math.min((ts - lastTime) / 1000, 0.05) * speedMult;
+  lastTime = ts;
+
+  if (!paused) {
+    stageT += dt / stageDuration[stage] || 0;
+    if (stageT > 1) { stageT = 1; }
+  }
+
+  // Stage logic
+  let forkIndex = 0;
+  let openFraction = 0;
+  let helX = DNA_START_X;
+  let poly1X = DNA_START_X;
+  let poly2X = DNA_START_X;
+  let showPoly = false;
+
+  if (stage === 0) {
+    // Helicase moves to center
+    helX = DNA_START_X + (DNA_WIDTH * 0.5) * stageT;
+    forkIndex = Math.floor(SEQ_LEN * 0.5 * stageT);
+    openFraction = 0;
+    if (stageT >= 1 && !paused) { stage = 1; stageT = 0; }
+  } else if (stage === 1) {
+    // Fork opens from center
+    helX = DNA_START_X + DNA_WIDTH * 0.5;
+    forkIndex = Math.floor(SEQ_LEN * 0.5);
+    openFraction = stageT;
+    if (stageT >= 1 && !paused) { 
+      stage = 2; stageT = 0;
+      newStrand1 = [];
+      newStrand2 = [];
+    }
+  } else if (stage === 2) {
+    forkIndex = Math.floor(SEQ_LEN * 0.5);
+    openFraction = 1;
+    helX = DNA_START_X + DNA_WIDTH * 0.5;
+    showPoly = true;
+
+    // Polymerase builds strands
+    const maxBases = forkIndex;
+    const basesBuilt = Math.floor(stageT * maxBases);
+    bpCopied = basesBuilt;
+
+    newStrand1 = [];
+    newStrand2 = [];
+    for (let i = 0; i < basesBuilt; i++) {
+      const idx = forkIndex - 1 - i;
+      if (idx >= 0) {
+        newStrand1.push(COMPLEMENT[sequence[idx]]);
+        newStrand2.push(COMPLEMENT[COMPLEMENT[sequence[idx]]]);
+      }
+    }
+
+    poly1X = DNA_START_X + (forkIndex - 1 - (basesBuilt - 1)) * BASE_SPACING;
+    poly2X = poly1X;
+  }
+
+  // Draw
+  ctx.clearRect(0, 0, W, H);
+
+  // Background grid
+  ctx.strokeStyle = 'rgba(0,229,160,0.03)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 40) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = 0; y < H; y += 40) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  drawBonds(forkIndex, openFraction);
+  drawBackbone(forkIndex, openFraction);
+  drawNewStrands(forkIndex, openFraction);
+  drawBases(forkIndex, openFraction);
+  drawHelicase(helX);
+  if (showPoly && newStrand1.length > 0) {
+    drawPolymerase(poly1X, 0);
+    drawPolymerase(poly2X, 1);
+  }
+
+  // Update UI
+  document.getElementById('stageLabel').textContent = getStageLabel();
+  document.getElementById('bpCount').textContent = bpCopied;
+  document.getElementById('stageNum').textContent = `${stage + 1} / 3`;
+
+  requestAnimationFrame(render);
+}
+
+// Controls
+document.getElementById('speedSlider').addEventListener('input', e => {
+  speedMult = parseInt(e.target.value);
+  document.getElementById('speedVal').textContent = speedMult + '×';
+});
+
+document.getElementById('pauseBtn').addEventListener('click', function() {
+  paused = !paused;
+  this.textContent = paused ? 'Resume' : 'Pause';
+  this.classList.toggle('active', !paused);
+});
+
+document.getElementById('restartBtn').addEventListener('click', () => {
+  stage = 0; stageT = 0; bpCopied = 0;
+  newStrand1 = []; newStrand2 = [];
+  sequence = [];
+  for (let i = 0; i < SEQ_LEN; i++) sequence.push(BASES[Math.floor(Math.random() * 4)]);
+});
+
+requestAnimationFrame(render);
+</script>
+</body>
+</html>
