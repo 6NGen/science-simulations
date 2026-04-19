@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Birth of Differential Equations</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=JetBrains+Mono:wght@300;400;700&display=swap');
+
+  :root {
+    --bg: #06080f;
+    --gold: #e8c547;
+    --gold2: #f5d96a;
+    --blue: #4fa8d5;
+    --red: #d45a4a;
+    --green: #4ad48a;
+    --text: #d8cdb0;
+    --muted: #6a6040;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'EB Garamond', serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  header {
+    width: 100%;
+    max-width: 900px;
+    padding: 24px 20px 12px;
+    text-align: center;
+  }
+
+  .era {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    font-size: clamp(1.4rem, 4vw, 2.4rem);
+    font-weight: 400;
+    font-style: italic;
+    color: var(--gold);
+    line-height: 1.2;
+  }
+
+  h1 span { font-style: normal; font-weight: 600; }
+
+  .divider {
+    width: 160px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 14px auto;
+  }
+
+  .main {
+    width: 100%;
+    max-width: 900px;
+    padding: 0 16px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* Stage selector */
+  .stages {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .stage-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    padding: 7px 14px;
+    border: 1px solid rgba(232,197,71,0.25);
+    background: transparent;
+    color: var(--muted);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+  }
+
+  .stage-btn:hover { border-color: var(--gold); color: var(--text); }
+  .stage-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(232,197,71,0.08); }
+
+  canvas {
+    width: 100%;
+    border-radius: 4px;
+    border: 1px solid rgba(232,197,71,0.15);
+    box-shadow: 0 0 60px rgba(0,0,0,0.7);
+    display: block;
+    background: #06080f;
+  }
+
+  .stage-title {
+    font-size: 1.1rem;
+    font-style: italic;
+    color: var(--gold);
+    text-align: center;
+    min-height: 28px;
+  }
+
+  .equation-display {
+    background: rgba(10,12,20,0.9);
+    border: 1px solid rgba(232,197,71,0.2);
+    border-radius: 4px;
+    padding: 16px 20px;
+    text-align: center;
+    font-size: clamp(1rem, 2.5vw, 1.4rem);
+    font-style: italic;
+    color: var(--gold2);
+    letter-spacing: 0.05em;
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.5s;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  button {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 9px 20px;
+    border: 1px solid var(--gold);
+    background: transparent;
+    color: var(--gold);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  button:hover { background: rgba(232,197,71,0.1); }
+  button.active { background: rgba(232,197,71,0.15); }
+
+  .insight {
+    font-size: 0.88rem;
+    color: var(--muted);
+    font-style: italic;
+    text-align: center;
+    line-height: 1.8;
+    max-width: 580px;
+    margin: 0 auto;
+  }
+
+  .insight span { color: var(--gold); font-style: normal; }
+
+  .examples-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+  }
+
+  .example-card {
+    background: rgba(10,12,20,0.8);
+    border: 1px solid rgba(232,197,71,0.1);
+    border-radius: 4px;
+    padding: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .example-card:hover { border-color: rgba(232,197,71,0.4); }
+  .example-card.active { border-color: var(--gold); background: rgba(232,197,71,0.06); }
+
+  .example-card .icon { font-size: 1.4rem; margin-bottom: 4px; }
+  .example-card .name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.55rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .example-card .eq { font-size: 0.85rem; font-style: italic; color: var(--gold2); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="era">17th Century · The Question That Changed Engineering</div>
+  <h1>The Birth of <span>Differential Equations</span></h1>
+  <div class="divider"></div>
+</header>
+
+<div class="main">
+
+  <div class="stages">
+    <button class="stage-btn active" data-stage="0">I. The Question</button>
+    <button class="stage-btn" data-stage="1">II. Rate of Change</button>
+    <button class="stage-btn" data-stage="2">III. Self-Referential Change</button>
+    <button class="stage-btn" data-stage="3">IV. The Equation</button>
+    <button class="stage-btn" data-stage="4">V. Universal Language</button>
+  </div>
+
+  <canvas id="c" width="868" height="400"></canvas>
+
+  <div class="stage-title" id="stageTitle">How do you measure something that never stops changing?</div>
+  <div class="equation-display" id="eqDisplay">Nature never stands still.</div>
+
+  <div class="examples-row">
+    <div class="example-card active" data-ex="0">
+      <div class="icon">☕</div>
+      <div class="name">Cooling</div>
+      <div class="eq">dT/dt = −k(T − T∞)</div>
+    </div>
+    <div class="example-card" data-ex="1">
+      <div class="icon">🌊</div>
+      <div class="name">Oscillation</div>
+      <div class="eq">d²x/dt² = −ω²x</div>
+    </div>
+    <div class="example-card" data-ex="2">
+      <div class="icon">⚡</div>
+      <div class="name">Circuit</div>
+      <div class="eq">L·dI/dt + RI = V</div>
+    </div>
+    <div class="example-card" data-ex="3">
+      <div class="icon">🚀</div>
+      <div class="name">Motion</div>
+      <div class="eq">F = m·d²x/dt²</div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button id="prevBtn">← Prev</button>
+    <button id="playBtn" class="active">▶ Play</button>
+    <button id="nextBtn">Next →</button>
+  </div>
+
+  <p class="insight" id="insight">
+    For millennia, mathematics could only describe things at rest.
+    But nature is <span>never at rest</span>. Everything changes. And sometimes —
+    the rate of change depends on the thing itself.
+    That is the heart of a differential equation.
+  </p>
+
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+let currentStage = 0;
+let currentEx = 0;
+let t = 0;
+let playing = true;
+let rafId = null;
+
+const stages = [
+  {
+    title: "How do you measure something that never stops changing?",
+    eq: "The world is in constant motion. Static mathematics wasn't enough.",
+    insight: "For millennia, mathematics could only describe things at rest. But nature is <span>never at rest</span>. Everything changes. And sometimes — the rate of change depends on the thing itself. That is the heart of a differential equation."
+  },
+  {
+    title: "The derivative: measuring change at a single instant",
+    eq: "dy/dx — the rate of change at any point",
+    insight: "Newton and Leibniz gave us the <span>derivative</span> — a way to measure how fast something changes at a single instant. Not over an interval. At a point. This was the first breakthrough."
+  },
+  {
+    title: "What if the rate of change depends on the value itself?",
+    eq: "dT/dt = −k · T — the rate depends on T itself",
+    insight: "Here is the deep insight: sometimes <span>how fast something changes depends on what it currently is</span>. A hot object cools faster. A large population grows faster. This self-referential relationship — this is a differential equation."
+  },
+  {
+    title: "F = ma — Newton's differential equation",
+    eq: "F = m · d²x/dt² — the universe in one equation",
+    insight: "Newton's second law is a differential equation. Acceleration is the <span>second derivative of position</span>. From this one equation, you can predict the motion of every planet, every cannonball, every falling apple. Forever."
+  },
+  {
+    title: "The same structure appears everywhere in nature",
+    eq: "One language. Infinite phenomena.",
+    insight: "Heat, electricity, vibration, fluid flow, population dynamics — all described by <span>differential equations</span>. Different phenomena, same mathematical structure. This is why engineers can design bridges, engines, and circuits using the same tools."
+  }
+];
+
+const examples = [
+  { // Coffee cooling
+    draw: (t) => {
+      const PAD = {l:60, r:30, t:40, b:50};
+      const PW = W - PAD.l - PAD.r;
+      const PH = H - PAD.t - PAD.b;
+      const k = 0.3;
+      const T0 = 90, Tinf = 20;
+
+      // Grid
+      ctx.strokeStyle = 'rgba(232,197,71,0.06)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 5; i++) {
+        const y = PAD.t + i * PH/5;
+        ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(PAD.l+PW, y); ctx.stroke();
+        const x = PAD.l + i * PW/5;
+        ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, PAD.t+PH); ctx.stroke();
+      }
+
+      // Axes
+      ctx.strokeStyle = 'rgba(232,197,71,0.4)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(PAD.l, PAD.t); ctx.lineTo(PAD.l, PAD.t+PH); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(PAD.l, PAD.t+PH); ctx.lineTo(PAD.l+PW, PAD.t+PH); ctx.stroke();
+
+      // Room temp line
+      const yRoom = PAD.t + PH * (1 - (Tinf - Tinf)/(T0 - Tinf + 10));
+      const yRoomActual = PAD.t + PH * (1 - 0.05);
+      ctx.setLineDash([4,4]);
+      ctx.strokeStyle = 'rgba(232,197,71,0.3)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(PAD.l, yRoomActual); ctx.lineTo(PAD.l+PW, yRoomActual); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(232,197,71,0.5)';
+      ctx.font = 'italic 12px EB Garamond';
+      ctx.fillText('T∞ (room temperature)', PAD.l+8, yRoomActual - 6);
+
+      // Curve
+      ctx.beginPath();
+      for (let i = 0; i <= 300; i++) {
+        const time = i / 300 * 10;
+        const temp = Tinf + (T0 - Tinf) * Math.exp(-k * time);
+        const cx2 = PAD.l + (time/10) * PW;
+        const cy2 = PAD.t + PH * (1 - (temp - Tinf) / (T0 - Tinf + 10));
+        i === 0 ? ctx.moveTo(cx2, cy2) : ctx.lineTo(cx2, cy2);
+      }
+      ctx.strokeStyle = '#e8c547';
+      ctx.lineWidth = 2.5;
+      ctx.shadowBlur = 8; ctx.shadowColor = 'rgba(232,197,71,0.4)';
+      ctx.stroke(); ctx.shadowBlur = 0;
+
+      // Moving point
+      const tNorm = (t % 10) / 10;
+      const tCurrent = tNorm * 10;
+      const tempCurrent = Tinf + (T0 - Tinf) * Math.exp(-k * tCurrent);
+      const px2 = PAD.l + tNorm * PW;
+      const py2 = PAD.t + PH * (1 - (tempCurrent - Tinf) / (T0 - Tinf + 10));
+
+      // Tangent line (derivative)
+      const slope = -k * (tempCurrent - Tinf);
+      const slopeCanvas = slope / (T0 - Tinf + 10) * PH / (PW / 10);
+      const tl = 60;
+      ctx.beginPath();
+      ctx.moveTo(px2 - tl, py2 + slopeCanvas * tl);
+      ctx.lineTo(px2 + tl, py2 - slopeCanvas * tl);
+      ctx.strokeStyle = 'rgba(79,168,213,0.7)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Point
+      ctx.beginPath(); ctx.arc(px2, py2, 7, 0, Math.PI*2);
+      ctx.fillStyle = '#e8c547';
+      ctx.shadowBlur = 12; ctx.shadowColor = '#e8c547';
+      ctx.fill(); ctx.shadowBlur = 0;
+
+      // dT/dt label
+      ctx.fillStyle = '#4fa8d5';
+      ctx.font = 'italic 13px EB Garamond';
+      ctx.fillText(`dT/dt = ${slope.toFixed(1)}°/s`, px2 + 12, py2 - 10);
+
+      // T label
+      ctx.fillStyle = '#e8c547';
+      ctx.fillText(`T = ${tempCurrent.toFixed(1)}°C`, px2 + 12, py2 + 16);
+
+      // Labels
+      ctx.fillStyle = 'rgba(232,197,71,0.5)';
+      ctx.font = '11px JetBrains Mono';
+      ctx.textAlign = 'right';
+      ctx.fillText('90°', PAD.l-4, PAD.t+8);
+      ctx.fillText('20°', PAD.l-4, PAD.t+PH-4);
+      ctx.textAlign = 'center';
+      ctx.fillText('time →', PAD.l + PW/2, PAD.t+PH+32);
+      ctx.textAlign = 'left';
+      ctx.fillText('Temperature (°C)', PAD.l+8, PAD.t+20);
+    }
+  },
+  { // Spring oscillation
+    draw: (t) => {
+      const cx2 = W/2, cy2 = H/2;
+      const omega = 1.5;
+      const A = 140;
+      const x = A * Math.cos(omega * t);
+      const v = -A * omega * Math.sin(omega * t);
+
+      // Spring
+      const springX = cx2 - 200;
+      const ballX = springX + 200 + x;
+      const ballY = cy2;
+
+      // Draw spring
+      ctx.strokeStyle = 'rgba(232,197,71,0.6)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(springX - 60, ballY);
+      const coils = 12;
+      for (let i = 0; i <= coils * 10; i++) {
+        const sx = springX - 60 + i / (coils * 10) * (ballX - springX + 60 - 15);
+        const sy = ballY + Math.sin(i / 10 * Math.PI * 2) * 18;
+        i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+      }
+      ctx.stroke();
+
+      // Wall
+      ctx.fillStyle = 'rgba(232,197,71,0.3)';
+      ctx.fillRect(springX - 70, cy2 - 60, 12, 120);
+
+      // Equilibrium line
+      ctx.setLineDash([4,4]);
+      ctx.strokeStyle = 'rgba(232,197,71,0.2)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cx2, cy2 - 80);
+      ctx.lineTo(cx2, cy2 + 80);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Ball
+      const grad = ctx.createRadialGradient(ballX, ballY, 0, ballX, ballY, 24);
+      grad.addColorStop(0, 'rgba(232,197,71,0.9)');
+      grad.addColorStop(1, 'rgba(232,197,71,0.1)');
+      ctx.beginPath(); ctx.arc(ballX, ballY, 24, 0, Math.PI*2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.beginPath(); ctx.arc(ballX, ballY, 16, 0, Math.PI*2);
+      ctx.fillStyle = '#e8c547';
+      ctx.shadowBlur = 16; ctx.shadowColor = '#e8c547';
+      ctx.fill(); ctx.shadowBlur = 0;
+
+      // x arrow
+      ctx.strokeStyle = '#4fa8d5';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(cx2, cy2 + 55);
+      ctx.lineTo(ballX, cy2 + 55);
+      ctx.stroke();
+      if (Math.abs(x) > 5) {
+        ctx.fillStyle = '#4fa8d5';
+        ctx.font = 'italic 13px EB Garamond';
+        ctx.textAlign = 'center';
+        ctx.fillText(`x = ${(x/A).toFixed(2)}`, (cx2+ballX)/2, cy2 + 72);
+      }
+
+      // Velocity indicator
+      ctx.fillStyle = '#4ad48a';
+      ctx.font = 'italic 12px EB Garamond';
+      ctx.textAlign = 'center';
+      ctx.fillText(`v = dx/dt = ${(v/A/omega).toFixed(2)}`, ballX, cy2 - 45);
+
+      // Equation
+      ctx.fillStyle = 'rgba(232,197,71,0.8)';
+      ctx.font = 'italic 15px EB Garamond';
+      ctx.textAlign = 'center';
+      ctx.fillText('d²x/dt² = −ω²x', W/2, 36);
+
+      // Mini graph
+      const gx = W - 220, gy = 60, gw = 190, gh = 100;
+      ctx.strokeStyle = 'rgba(232,197,71,0.08)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(gx, gy, gw, gh);
+      ctx.beginPath();
+      for (let i = 0; i <= 200; i++) {
+        const tt = i/200 * 12;
+        const xx = A * Math.cos(omega * tt);
+        const gxx = gx + i/200 * gw;
+        const gyy = gy + gh/2 - xx/A * gh/2 * 0.85;
+        i === 0 ? ctx.moveTo(gxx, gyy) : ctx.lineTo(gxx, gyy);
+      }
+      ctx.strokeStyle = 'rgba(232,197,71,0.5)';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      const tNorm2 = (t % (2*Math.PI/omega)) / (2*Math.PI/omega);
+      const dotX = gx + tNorm2 * gw;
+      const dotY = gy + gh/2 - Math.cos(omega * t)/1 * gh/2 * 0.85;
+      ctx.beginPath(); ctx.arc(dotX, dotY, 3, 0, Math.PI*2);
+      ctx.fillStyle = '#e8c547'; ctx.fill();
+    }
+  },
+  { // Circuit
+    draw: (t) => {
+      const cx2 = W/2, cy2 = H/2;
+      const R2 = 1, L = 0.5, V = 5;
+      const tau = L/R2;
+      const tMod = t % (tau * 8);
+      const I = V/R2 * (1 - Math.exp(-tMod/tau));
+      const dI = V/L * Math.exp(-tMod/tau);
+
+      // Circuit diagram
+      const cw = 300, ch = 180;
+      const cx3 = cx2 - cw/2, cy3 = cy2 - ch/2;
+
+      ctx.strokeStyle = 'rgba(232,197,71,0.5)';
+      ctx.lineWidth = 2;
+      // Top wire
+      ctx.beginPath(); ctx.moveTo(cx3, cy3); ctx.lineTo(cx3+cw, cy3); ctx.stroke();
+      // Bottom wire
+      ctx.beginPath(); ctx.moveTo(cx3, cy3+ch); ctx.lineTo(cx3+cw, cy3+ch); ctx.stroke();
+      // Left wire (battery)
+      ctx.beginPath(); ctx.moveTo(cx3, cy3); ctx.lineTo(cx3, cy3+ch); ctx.stroke();
+      // Right wire (resistor + inductor)
+      ctx.beginPath(); ctx.moveTo(cx3+cw, cy3); ctx.lineTo(cx3+cw, cy3+ch); ctx.stroke();
+
+      // Battery symbol
+      const bx = cx3 + 15, by = cy2;
+      ctx.strokeStyle = '#e8c547';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(bx, by-20); ctx.lineTo(bx, by+20); ctx.stroke();
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(bx-8, by-10); ctx.lineTo(bx+8, by-10); ctx.stroke();
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(bx-14, by+10); ctx.lineTo(bx+14, by+10); ctx.stroke();
+      ctx.fillStyle = '#e8c547';
+      ctx.font = '11px JetBrains Mono';
+      ctx.textAlign = 'center';
+      ctx.fillText('V', bx, by - 28);
+
+      // Resistor
+      const rx = cx3 + cw - 15, ry = cy2 - 40;
+      ctx.strokeStyle = '#4fa8d5';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(rx, ry);
+      for (let i = 0; i < 8; i++) {
+        ctx.lineTo(rx - 10, ry + 8 + i*8);
+        ctx.lineTo(rx + 10, ry + 8 + i*8 + 4);
+      }
+      ctx.lineTo(rx, ry + 80);
+      ctx.stroke();
+      ctx.fillStyle = '#4fa8d5';
+      ctx.font = '11px JetBrains Mono';
+      ctx.fillText('R', rx + 18, ry + 40);
+
+      // Inductor (coil)
+      const lx = cx2, ly = cy3;
+      ctx.strokeStyle = '#4ad48a';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(lx - 60, ly);
+      for (let i = 0; i < 5; i++) {
+        ctx.arc(lx - 40 + i*24, ly, 12, Math.PI, 0, false);
+      }
+      ctx.lineTo(lx + 60, ly);
+      ctx.stroke();
+      ctx.fillStyle = '#4ad48a';
+      ctx.font = '11px JetBrains Mono';
+      ctx.fillText('L', cx2, ly - 18);
+
+      // Current flow animation
+      const flowT = (t * 2) % 1;
+      const pathPoints = [
+        [cx3, cy3], [cx3+cw, cy3], [cx3+cw, cy3+ch], [cx3, cy3+ch]
+      ];
+      const totalLen = cw + ch + cw + ch;
+      const traveled = flowT * totalLen;
+      let accumulated = 0;
+      let dotX = cx3, dotY = cy3;
+      for (let seg = 0; seg < 4; seg++) {
+        const [x1, y1] = pathPoints[seg];
+        const [x2, y2] = pathPoints[(seg+1)%4];
+        const segLen = Math.abs(x2-x1) + Math.abs(y2-y1);
+        if (accumulated + segLen >= traveled) {
+          const frac = (traveled - accumulated) / segLen;
+          dotX = x1 + (x2-x1)*frac;
+          dotY = y1 + (y2-y1)*frac;
+          break;
+        }
+        accumulated += segLen;
+      }
+
+      const alpha = I / (V/R2);
+      ctx.beginPath(); ctx.arc(dotX, dotY, 6, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(232,197,71,${0.4 + alpha*0.6})`;
+      ctx.shadowBlur = 10; ctx.shadowColor = '#e8c547';
+      ctx.fill(); ctx.shadowBlur = 0;
+
+      // Values
+      ctx.fillStyle = '#e8c547';
+      ctx.font = 'italic 14px EB Garamond';
+      ctx.textAlign = 'left';
+      ctx.fillText(`I = ${I.toFixed(3)} A`, 20, H - 60);
+      ctx.fillStyle = '#4fa8d5';
+      ctx.fillText(`dI/dt = ${dI.toFixed(3)} A/s`, 20, H - 40);
+
+      ctx.fillStyle = 'rgba(232,197,71,0.8)';
+      ctx.font = 'italic 14px EB Garamond';
+      ctx.textAlign = 'center';
+      ctx.fillText('L·dI/dt + R·I = V', W/2, H - 24);
+    }
+  },
+  { // Newton F=ma
+    draw: (t) => {
+      // Projectile motion
+      const g = 9.81;
+      const v0 = 180, angle = 45 * Math.PI/180;
+      const vx = v0 * Math.cos(angle);
+      const vy = v0 * Math.sin(angle);
+      const tTotal = 2 * vy / g;
+
+      const PAD2 = {l:60, r:30, t:40, b:50};
+      const PW2 = W - PAD2.l - PAD2.r;
+      const PH2 = H - PAD2.t - PAD2.b;
+
+      // Grid
+      ctx.strokeStyle = 'rgba(232,197,71,0.05)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 6; i++) {
+        const x = PAD2.l + i*PW2/6;
+        ctx.beginPath(); ctx.moveTo(x, PAD2.t); ctx.lineTo(x, PAD2.t+PH2); ctx.stroke();
+        const y = PAD2.t + i*PH2/6;
+        ctx.beginPath(); ctx.moveTo(PAD2.l, y); ctx.lineTo(PAD2.l+PW2, y); ctx.stroke();
+      }
+
+      // Axes
+      ctx.strokeStyle = 'rgba(232,197,71,0.4)'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(PAD2.l, PAD2.t); ctx.lineTo(PAD2.l, PAD2.t+PH2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(PAD2.l, PAD2.t+PH2); ctx.lineTo(PAD2.l+PW2, PAD2.t+PH2); ctx.stroke();
+
+      // Trail
+      const tCurrent = (t * 0.4) % (tTotal + 1);
+      for (let i = 0; i <= 200; i++) {
+        const tt = i/200 * tCurrent;
+        const x = vx * tt;
+        const y = vy * tt - 0.5 * g * tt * tt;
+        if (y < 0) break;
+        const cx2 = PAD2.l + (x / (vx*tTotal)) * PW2;
+        const cy2 = PAD2.t + PH2 - (y / (vy*vy/(2*g))) * PH2 * 0.85;
+        const alpha = i/200;
+        ctx.beginPath(); ctx.arc(cx2, cy2, 2, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(232,197,71,${alpha*0.5})`;
+        ctx.fill();
+      }
+
+      // Full path (faint)
+      ctx.beginPath();
+      for (let i = 0; i <= 300; i++) {
+        const tt = i/300 * tTotal;
+        const x = vx * tt;
+        const y = vy * tt - 0.5 * g * tt * tt;
+        const cx2 = PAD2.l + (x / (vx*tTotal)) * PW2;
+        const cy2 = PAD2.t + PH2 - (y / (vy*vy/(2*g))) * PH2 * 0.85;
+        i === 0 ? ctx.moveTo(cx2, cy2) : ctx.lineTo(cx2, cy2);
+      }
+      ctx.strokeStyle = 'rgba(232,197,71,0.15)';
+      ctx.lineWidth = 1; ctx.stroke();
+
+      // Ball
+      if (tCurrent <= tTotal) {
+        const xBall = vx * tCurrent;
+        const yBall = vy * tCurrent - 0.5 * g * tCurrent * tCurrent;
+        if (yBall >= 0) {
+          const bx = PAD2.l + (xBall / (vx*tTotal)) * PW2;
+          const by = PAD2.t + PH2 - (yBall / (vy*vy/(2*g))) * PH2 * 0.85;
+
+          // Velocity vector
+          const vxCur = vx;
+          const vyCur = vy - g * tCurrent;
+          const scale = 0.15;
+          ctx.strokeStyle = '#4fa8d5'; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(bx, by);
+          ctx.lineTo(bx + vxCur*scale, by - vyCur*scale);
+          ctx.stroke();
+
+          // Gravity arrow
+          ctx.strokeStyle = '#d45a4a'; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(bx, by);
+          ctx.lineTo(bx, by + 40);
+          ctx.stroke();
+          ctx.fillStyle = '#d45a4a';
+          ctx.font = 'italic 12px EB Garamond';
+          ctx.textAlign = 'center';
+          ctx.fillText('F = mg', bx, by + 56);
+
+          ctx.beginPath(); ctx.arc(bx, by, 10, 0, Math.PI*2);
+          ctx.fillStyle = '#e8c547';
+          ctx.shadowBlur = 12; ctx.shadowColor = '#e8c547';
+          ctx.fill(); ctx.shadowBlur = 0;
+
+          // Values
+          ctx.fillStyle = '#4fa8d5';
+          ctx.font = 'italic 13px EB Garamond';
+          ctx.textAlign = 'left';
+          ctx.fillText(`vₓ = ${vxCur.toFixed(0)} m/s`, bx + 14, by - 16);
+          ctx.fillStyle = '#e8c547';
+          ctx.fillText(`vᵧ = ${vyCur.toFixed(0)} m/s`, bx + 14, by);
+        }
+      }
+
+      ctx.fillStyle = 'rgba(232,197,71,0.8)';
+      ctx.font = 'italic 15px EB Garamond';
+      ctx.textAlign = 'center';
+      ctx.fillText('F = m · d²x/dt²', W/2, 32);
+      ctx.font = 'italic 11px EB Garamond';
+      ctx.fillStyle = 'rgba(232,197,71,0.4)';
+      ctx.fillText('x(t) = v₀cos(θ)·t     y(t) = v₀sin(θ)·t − ½g·t²', W/2, 52);
+    }
+  }
+];
+
+function drawStage(stage, t) {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#06080f';
+  ctx.fillRect(0, 0, W, H);
+
+  if (stage === 0) drawStage0(t);
+  else if (stage === 1) drawStage1(t);
+  else if (stage === 2) drawStage2(t);
+  else if (stage === 3) examples[currentEx].draw(t);
+  else if (stage === 4) drawStage4(t);
+
+  document.getElementById('stageTitle').textContent = stages[stage].title;
+  document.getElementById('eqDisplay').textContent = stages[stage].eq;
+  document.getElementById('insight').innerHTML = stages[stage].insight;
+}
+
+function drawStage0(t) {
+  // Floating phenomena - particles drifting
+  const items = [
+    {x: W*0.2, y: H*0.3, label: 'Coffee Cooling', icon: '☕', phase: 0},
+    {x: W*0.5, y: H*0.2, label: 'Pendulum', icon: '⚖', phase: 1.2},
+    {x: W*0.8, y: H*0.35, label: 'Population', icon: '👥', phase: 2.4},
+    {x: W*0.25, y: H*0.7, label: 'Heat Flow', icon: '🌡', phase: 0.8},
+    {x: W*0.65, y: H*0.65, label: 'Circuits', icon: '⚡', phase: 1.8},
+    {x: W*0.5, y: H*0.55, label: '???', icon: '∞', phase: 3.1},
+  ];
+
+  items.forEach(item => {
+    const ox = Math.sin(t * 0.5 + item.phase) * 12;
+    const oy = Math.cos(t * 0.4 + item.phase) * 8;
+    const px = item.x + ox, py = item.y + oy;
+
+    ctx.fillStyle = 'rgba(232,197,71,0.15)';
+    ctx.beginPath(); ctx.arc(px, py, 35, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = 'rgba(232,197,71,0.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(px, py, 35, 0, Math.PI*2); ctx.stroke();
+
+    ctx.font = '20px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(item.icon, px, py + 6);
+    ctx.fillStyle = 'rgba(232,197,71,0.6)';
+    ctx.font = '11px JetBrains Mono';
+    ctx.fillText(item.label, px, py + 52);
+  });
+
+  // Question mark in center
+  const pulse = 0.8 + Math.sin(t) * 0.2;
+  ctx.fillStyle = `rgba(232,197,71,${pulse})`;
+  ctx.font = `italic bold ${Math.floor(60*pulse)}px EB Garamond`;
+  ctx.textAlign = 'center';
+  ctx.fillText('dy/dt = ?', W/2, H/2 + 12);
+}
+
+function drawStage1(t) {
+  const PAD = {l:70, r:30, t:50, b:60};
+  const PW2 = W - PAD.l - PAD.r;
+  const PH2 = H - PAD.t - PAD.b;
+
+  // Function: sin wave
+  ctx.beginPath();
+  for (let i = 0; i <= 400; i++) {
+    const x = i/400 * Math.PI * 4;
+    const y = Math.sin(x);
+    const cx2 = PAD.l + (x / (Math.PI*4)) * PW2;
+    const cy2 = PAD.t + PH2/2 - y * PH2*0.38;
+    i === 0 ? ctx.moveTo(cx2, cy2) : ctx.lineTo(cx2, cy2);
+  }
+  ctx.strokeStyle = 'rgba(232,197,71,0.4)';
+  ctx.lineWidth = 1.5; ctx.stroke();
+
+  // Axes
+  ctx.strokeStyle = 'rgba(232,197,71,0.3)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(PAD.l, PAD.t+PH2/2); ctx.lineTo(PAD.l+PW2, PAD.t+PH2/2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PAD.l, PAD.t); ctx.lineTo(PAD.l, PAD.t+PH2); ctx.stroke();
+
+  // Moving point with tangent
+  const tNorm = (t * 0.3) % (Math.PI*4);
+  const xVal = tNorm;
+  const yVal = Math.sin(xVal);
+  const slope = Math.cos(xVal); // dy/dx of sin(x)
+
+  const px2 = PAD.l + (xVal/(Math.PI*4)) * PW2;
+  const py2 = PAD.t + PH2/2 - yVal * PH2*0.38;
+  const slopeCanvas = -slope * PH2*0.38 / (PW2/(Math.PI*4));
+  const tLen = 80;
+
+  // Tangent
+  ctx.strokeStyle = '#4fa8d5'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(px2-tLen, py2+slopeCanvas*tLen);
+  ctx.lineTo(px2+tLen, py2-slopeCanvas*tLen);
+  ctx.stroke();
+
+  // Point
+  ctx.beginPath(); ctx.arc(px2, py2, 7, 0, Math.PI*2);
+  ctx.fillStyle = '#e8c547';
+  ctx.shadowBlur = 12; ctx.shadowColor = '#e8c547';
+  ctx.fill(); ctx.shadowBlur = 0;
+
+  // Labels
+  ctx.fillStyle = '#4fa8d5';
+  ctx.font = 'italic 13px EB Garamond';
+  ctx.textAlign = 'left';
+  ctx.fillText(`dy/dx = ${slope.toFixed(3)}`, px2+12, py2-14);
+  ctx.fillStyle = '#e8c547';
+  ctx.fillText(`y = ${yVal.toFixed(3)}`, px2+12, py2+8);
+
+  ctx.fillStyle = 'rgba(232,197,71,0.7)';
+  ctx.font = 'italic 14px EB Garamond';
+  ctx.textAlign = 'center';
+  ctx.fillText('f(x) = sin(x)     →     f \'(x) = cos(x)', W/2, PAD.t + 24);
+  ctx.font = '11px JetBrains Mono';
+  ctx.fillStyle = 'rgba(232,197,71,0.4)';
+  ctx.fillText('The tangent line gives the instantaneous rate of change at any point', W/2, H - 20);
+}
+
+function drawStage2(t) {
+  // Side-by-side: constant rate vs self-dependent rate
+  const mid = W/2;
+  const PAD2 = {t:60, b:60};
+  const PH2 = H - PAD2.t - PAD2.b;
+
+  // Left: linear (constant rate)
+  ctx.fillStyle = 'rgba(79,168,213,0.05)';
+  ctx.fillRect(0, 0, mid, H);
+  ctx.strokeStyle = 'rgba(79,168,213,0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(mid, 0); ctx.lineTo(mid, H); ctx.stroke();
+
+  ctx.fillStyle = '#4fa8d5';
+  ctx.font = 'italic 13px EB Garamond';
+  ctx.textAlign = 'center';
+  ctx.fillText('Constant rate: dy/dt = c', mid/2, 36);
+  ctx.fillStyle = 'rgba(79,168,213,0.5)';
+  ctx.font = '11px JetBrains Mono';
+  ctx.fillText('Simple. Predictable.', mid/2, 52);
+
+  ctx.beginPath();
+  ctx.moveTo(30, PAD2.t + PH2);
+  ctx.lineTo(mid - 30, PAD2.t);
+  ctx.strokeStyle = '#4fa8d5'; ctx.lineWidth = 2.5; ctx.stroke();
+
+  // Dot on linear
+  const tL = (t * 0.3) % 1;
+  ctx.beginPath(); ctx.arc(30 + tL*(mid-60), PAD2.t + PH2 - tL*PH2, 7, 0, Math.PI*2);
+  ctx.fillStyle = '#4fa8d5';
+  ctx.shadowBlur = 8; ctx.shadowColor = '#4fa8d5';
+  ctx.fill(); ctx.shadowBlur = 0;
+
+  // Right: exponential (self-dependent)
+  ctx.fillStyle = '#e8c547';
+  ctx.font = 'italic 13px EB Garamond';
+  ctx.textAlign = 'center';
+  ctx.fillText('Self-dependent: dy/dt = k·y', mid + mid/2, 36);
+  ctx.fillStyle = 'rgba(232,197,71,0.5)';
+  ctx.font = '11px JetBrains Mono';
+  ctx.fillText('Rate depends on current value!', mid + mid/2, 52);
+
+  ctx.beginPath();
+  for (let i = 0; i <= 200; i++) {
+    const xx = i/200;
+    const yy = Math.exp(xx * 3);
+    const cx2 = mid + 30 + xx*(mid-60);
+    const cy2 = PAD2.t + PH2 - (yy/Math.exp(3)) * PH2 * 0.9;
+    i === 0 ? ctx.moveTo(cx2, cy2) : ctx.lineTo(cx2, cy2);
+  }
+  ctx.strokeStyle = '#e8c547'; ctx.lineWidth = 2.5;
+  ctx.shadowBlur = 6; ctx.shadowColor = 'rgba(232,197,71,0.4)';
+  ctx.stroke(); ctx.shadowBlur = 0;
+
+  // Dot on exponential
+  const tE = (t * 0.15) % 1;
+  const yE = Math.exp(tE * 3);
+  const dotX = mid + 30 + tE*(mid-60);
+  const dotY = PAD2.t + PH2 - (yE/Math.exp(3)) * PH2 * 0.9;
+  ctx.beginPath(); ctx.arc(dotX, dotY, 7, 0, Math.PI*2);
+  ctx.fillStyle = '#e8c547';
+  ctx.shadowBlur = 12; ctx.shadowColor = '#e8c547';
+  ctx.fill(); ctx.shadowBlur = 0;
+
+  // Arrow annotations
+  ctx.fillStyle = 'rgba(232,197,71,0.7)';
+  ctx.font = 'italic 12px EB Garamond';
+  ctx.textAlign = 'center';
+  ctx.fillText('← Same increase each step', mid/2, H - 30);
+  ctx.fillText('← Faster as it grows!', mid + mid/2, H - 30);
+}
+
+function drawStage4(t) {
+  // Web of equations connecting to d.e.
+  const items = [
+    {x: W*0.5, y: H*0.5, label: 'Differential\nEquations', size: 50, color: '#e8c547'},
+    {x: W*0.2, y: H*0.2, label: 'Heat\nTransfer', size: 32, color: '#d45a4a'},
+    {x: W*0.8, y: H*0.2, label: 'Fluid\nMechanics', size: 32, color: '#4fa8d5'},
+    {x: W*0.15, y: H*0.6, label: 'Vibration\nAnalysis', size: 32, color: '#4ad48a'},
+    {x: W*0.85, y: H*0.6, label: 'Control\nSystems', size: 32, color: '#b39ddb'},
+    {x: W*0.35, y: H*0.85, label: 'Structural\nMechanics', size: 32, color: '#f0c060'},
+    {x: W*0.65, y: H*0.85, label: 'Thermodynamics', size: 32, color: '#f48fb1'},
+  ];
+
+  // Draw connections
+  items.slice(1).forEach((item, i) => {
+    const alpha = 0.3 + Math.sin(t * 0.5 + i) * 0.15;
+    ctx.strokeStyle = `rgba(232,197,71,${alpha})`;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4,4]);
+    ctx.beginPath();
+    ctx.moveTo(items[0].x, items[0].y);
+    ctx.lineTo(item.x, item.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  });
+
+  // Draw nodes
+  items.forEach((item, i) => {
+    const pulse = i === 0 ? 1 + Math.sin(t) * 0.1 : 1 + Math.sin(t * 0.7 + i) * 0.05;
+    const r = item.size * pulse;
+
+    ctx.beginPath(); ctx.arc(item.x, item.y, r, 0, Math.PI*2);
+    ctx.fillStyle = `${item.color}22`;
+    ctx.fill();
+    ctx.strokeStyle = item.color;
+    ctx.lineWidth = i === 0 ? 2.5 : 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle = item.color;
+    ctx.font = i === 0 ? 'bold 12px JetBrains Mono' : '10px JetBrains Mono';
+    ctx.textAlign = 'center';
+    const lines = item.label.split('\n');
+    lines.forEach((line, li) => {
+      ctx.fillText(line, item.x, item.y + (li - (lines.length-1)/2) * 14 + 4);
+    });
+  });
+}
+
+// Animation loop
+function loop(ts) {
+  if (playing) t = ts / 1000;
+  drawStage(currentStage, t);
+  rafId = requestAnimationFrame(loop);
+}
+
+// Controls
+document.querySelectorAll('.stage-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.stage-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    currentStage = parseInt(this.dataset.stage);
+  });
+});
+
+document.querySelectorAll('.example-card').forEach(card => {
+  card.addEventListener('click', function() {
+    document.querySelectorAll('.example-card').forEach(c => c.classList.remove('active'));
+    this.classList.add('active');
+    currentEx = parseInt(this.dataset.ex);
+    if (currentStage !== 3) {
+      currentStage = 3;
+      document.querySelectorAll('.stage-btn').forEach((b,i) => b.classList.toggle('active', i===3));
+    }
+  });
+});
+
+document.getElementById('prevBtn').addEventListener('click', () => {
+  currentStage = Math.max(0, currentStage - 1);
+  document.querySelectorAll('.stage-btn').forEach((b,i) => b.classList.toggle('active', i===currentStage));
+});
+
+document.getElementById('nextBtn').addEventListener('click', () => {
+  currentStage = Math.min(4, currentStage + 1);
+  document.querySelectorAll('.stage-btn').forEach((b,i) => b.classList.toggle('active', i===currentStage));
+});
+
+document.getElementById('playBtn').addEventListener('click', function() {
+  playing = !playing;
+  this.textContent = playing ? '▶ Play' : '⏸ Pause';
+  this.classList.toggle('active', playing);
+});
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
