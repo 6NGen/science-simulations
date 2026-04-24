@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spring-Mass-Damper System</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@300;400;700&display=swap');
+
+  :root {
+    --bg: #07090e;
+    --panel: #0d1018;
+    --blue: #4fa8d5;
+    --green: #4ad48a;
+    --red: #e05a3a;
+    --yellow: #e8c547;
+    --text: #c8d4e0;
+    --muted: #506070;
+    --border: rgba(79,168,213,0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'EB Garamond', serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  header {
+    width: 100%;
+    max-width: 900px;
+    padding: 22px 20px 10px;
+    text-align: center;
+  }
+
+  .era {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  h1 {
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
+    font-weight: 400;
+    font-style: italic;
+    color: var(--blue);
+    line-height: 1.2;
+  }
+
+  h1 span { font-style: normal; font-weight: 600; color: var(--yellow); }
+
+  .divider {
+    width: 160px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--blue), transparent);
+    margin: 12px auto;
+  }
+
+  .main {
+    width: 100%;
+    max-width: 900px;
+    padding: 0 16px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  canvas {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    box-shadow: 0 0 40px rgba(0,0,0,0.6);
+    display: block;
+    background: #07090e;
+  }
+
+  /* Equation display */
+  .equation {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 20px;
+    text-align: center;
+    font-size: clamp(0.9rem, 2vw, 1.2rem);
+    font-style: italic;
+    color: var(--yellow);
+    letter-spacing: 0.05em;
+  }
+
+  .equation span { color: var(--blue); }
+  .equation span.red { color: var(--red); }
+  .equation span.green { color: var(--green); }
+
+  /* Info row */
+  .info-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .info-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+
+  .info-card .lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.5rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .info-card .val {
+    font-size: 0.9rem;
+    font-style: italic;
+    color: var(--yellow);
+  }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .ctrl {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    min-width: 150px;
+  }
+
+  .ctrl label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.56rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .ctrl .val {
+    font-size: 0.9rem;
+    color: var(--blue);
+    font-style: italic;
+  }
+
+  input[type=range] {
+    width: 100%;
+    -webkit-appearance: none;
+    height: 3px;
+    background: rgba(79,168,213,0.2);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 13px; height: 13px;
+    background: var(--blue);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 6px rgba(79,168,213,0.5);
+  }
+
+  /* Regime buttons */
+  .regime-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .regime-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    padding: 7px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    border: 1px solid;
+  }
+
+  .regime-btn.underdamped { border-color: var(--blue); color: var(--blue); }
+  .regime-btn.underdamped:hover, .regime-btn.underdamped.active { background: rgba(79,168,213,0.15); }
+  .regime-btn.critically { border-color: var(--green); color: var(--green); }
+  .regime-btn.critically:hover, .regime-btn.critically.active { background: rgba(74,212,138,0.15); }
+  .regime-btn.overdamped { border-color: var(--red); color: var(--red); }
+  .regime-btn.overdamped:hover, .regime-btn.overdamped.active { background: rgba(224,90,58,0.15); }
+  .regime-btn.resonance { border-color: var(--yellow); color: var(--yellow); }
+  .regime-btn.resonance:hover, .regime-btn.resonance.active { background: rgba(232,197,71,0.15); }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  button.ctrl-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 9px 20px;
+    border: 1px solid var(--blue);
+    background: transparent;
+    color: var(--blue);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  button.ctrl-btn:hover { background: rgba(79,168,213,0.1); }
+  button.ctrl-btn.active { background: rgba(79,168,213,0.15); }
+
+  .real-world {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .rw-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .rw-card:hover { border-color: rgba(79,168,213,0.4); }
+  .rw-card.active { border-color: var(--blue); background: rgba(79,168,213,0.08); }
+  .rw-card .icon { font-size: 1.4rem; margin-bottom: 4px; }
+  .rw-card .name { font-family: 'JetBrains Mono', monospace; font-size: 0.55rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+  .explain {
+    font-size: 0.88rem;
+    color: var(--muted);
+    font-style: italic;
+    text-align: center;
+    line-height: 1.8;
+    max-width: 580px;
+    margin: 0 auto;
+  }
+
+  .explain span { color: var(--blue); font-style: normal; }
+  .explain span.yellow { color: var(--yellow); }
+
+  @media (max-width: 600px) {
+    .info-row { grid-template-columns: repeat(2, 1fr); }
+    .real-world { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="era">Classical Mechanics · The Foundation of Engineering Dynamics</div>
+  <h1>Spring · <span>Mass</span> · Damper</h1>
+  <div class="divider"></div>
+</header>
+
+<div class="main">
+
+  <div class="equation">
+    m·ẍ + <span class="red">c·ẋ</span> + <span class="green">k·x</span> = <span>F(t)</span>
+    &nbsp;&nbsp;|&nbsp;&nbsp;
+    ẍ + 2<span class="red">ζω₀</span>ẋ + <span class="green">ω₀²</span>x = F/m
+  </div>
+
+  <canvas id="c" width="868" height="420"></canvas>
+
+  <div class="info-row">
+    <div class="info-card">
+      <div class="lbl">Displacement x(t)</div>
+      <div class="val" id="dispVal">0.00 m</div>
+    </div>
+    <div class="info-card">
+      <div class="lbl">Velocity ẋ(t)</div>
+      <div class="val" id="velVal">0.00 m/s</div>
+    </div>
+    <div class="info-card">
+      <div class="lbl">Damping Ratio ζ</div>
+      <div class="val" id="zetaVal">0.10</div>
+    </div>
+    <div class="info-card">
+      <div class="lbl">Regime</div>
+      <div class="val" id="regimeVal">Underdamped</div>
+    </div>
+  </div>
+
+  <div class="regime-row">
+    <button class="regime-btn underdamped active" onclick="setRegime('under')">Underdamped (ζ &lt; 1)</button>
+    <button class="regime-btn critically" onclick="setRegime('critical')">Critically Damped (ζ = 1)</button>
+    <button class="regime-btn overdamped" onclick="setRegime('over')">Overdamped (ζ &gt; 1)</button>
+    <button class="regime-btn resonance" onclick="setRegime('resonance')">Resonance (ζ ≈ 0)</button>
+  </div>
+
+  <div class="controls">
+    <div class="ctrl">
+      <label>Mass m (kg)</label>
+      <div class="val" id="massVal">1.0 kg</div>
+      <input type="range" id="massSlider" min="0.5" max="5" step="0.1" value="1">
+    </div>
+    <div class="ctrl">
+      <label>Spring k (N/m)</label>
+      <div class="val" id="springVal">10.0 N/m</div>
+      <input type="range" id="springSlider" min="1" max="50" step="0.5" value="10">
+    </div>
+    <div class="ctrl">
+      <label>Damping c (N·s/m)</label>
+      <div class="val" id="dampVal">0.63 N·s/m</div>
+      <input type="range" id="dampSlider" min="0" max="20" step="0.1" value="0.63">
+    </div>
+    <div class="ctrl">
+      <label>Force Frequency (Hz)</label>
+      <div class="val" id="freqVal">0.00 Hz</div>
+      <input type="range" id="freqSlider" min="0" max="3" step="0.05" value="0">
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="ctrl-btn active" id="playBtn" onclick="togglePlay()">⏸ Pause</button>
+    <button class="ctrl-btn" onclick="resetSim()">↺ Reset</button>
+    <button class="ctrl-btn" onclick="kick()">⚡ Kick</button>
+  </div>
+
+  <div class="real-world">
+    <div class="rw-card active" onclick="setPreset('car')" id="rw-car">
+      <div class="icon">🚗</div>
+      <div class="name">Car Suspension</div>
+    </div>
+    <div class="rw-card" onclick="setPreset('building')" id="rw-building">
+      <div class="icon">🏢</div>
+      <div class="name">Building Seismic</div>
+    </div>
+    <div class="rw-card" onclick="setPreset('watch')" id="rw-watch">
+      <div class="icon">⌚</div>
+      <div class="name">Watch Escapement</div>
+    </div>
+    <div class="rw-card" onclick="setPreset('tacoma')" id="rw-tacoma">
+      <div class="icon">🌉</div>
+      <div class="name">Tacoma Bridge</div>
+    </div>
+  </div>
+
+  <p class="explain" id="explainText">
+    The spring-mass-damper is the <span>fundamental model of mechanical engineering</span>.
+    Every vibrating system — cars, buildings, machines — reduces to this equation.
+    Three forces act: the <span class="yellow">spring restores</span>, the <span>damper dissipates</span>,
+    and mass resists change. Together they determine whether a system oscillates, decays, or explodes.
+  </p>
+
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+// Physics
+let m = 1.0, k = 10.0, c = 0.63, F0 = 0, forceFreq = 0;
+let x = 1.5, v = 0, t = 0;
+let playing = true;
+let lastTs = null;
+
+// History for graph
+const history = [];
+const MAX_HIST = 500;
+
+// Presets
+const presets = {
+  car: { m: 1200, k: 16000, c: 4000, label: 'Car Suspension — critically damped for comfort. ζ ≈ 0.3-0.7', x0: 0.3 },
+  building: { m: 500000, k: 2000000, c: 100000, label: 'Building seismic damper — tuned to absorb earthquake energy', x0: 1.0 },
+  watch: { m: 0.001, k: 0.1, c: 0.0001, label: 'Watch escapement — nearly undamped, keeps perfect time', x0: 0.8 },
+  tacoma: { m: 1, k: 10, c: 0.02, label: '⚠ Tacoma Bridge — almost zero damping + resonant wind = collapse', x0: 0.1 },
+};
+
+function omega0() { return Math.sqrt(k / m); }
+function zeta() { return c / (2 * Math.sqrt(m * k)); }
+
+function getRegimeText(z) {
+  if (z < 0.05) return 'Resonance Zone';
+  if (z < 1.0) return 'Underdamped';
+  if (Math.abs(z - 1.0) < 0.05) return 'Critically Damped';
+  return 'Overdamped';
+}
+
+function getRegimeColor(z) {
+  if (z < 0.05) return '#e8c547';
+  if (z < 1.0) return '#4fa8d5';
+  if (Math.abs(z - 1.0) < 0.05) return '#4ad48a';
+  return '#e05a3a';
+}
+
+function physicsStep(dt) {
+  const force = F0 * Math.sin(2 * Math.PI * forceFreq * t);
+  const accel = (force - c * v - k * x) / m;
+  v += accel * dt;
+  x += v * dt;
+  t += dt;
+
+  history.push({ t, x, v });
+  if (history.length > MAX_HIST) history.shift();
+}
+
+// Drawing
+const SYS_X = 160;
+const SYS_Y = H / 2;
+const WALL_X = 60;
+const EQUILIB_X = SYS_X + 120;
+
+function toScreenX(xVal) {
+  return EQUILIB_X + xVal * 60;
+}
+
+function drawWall() {
+  ctx.fillStyle = 'rgba(79,168,213,0.3)';
+  ctx.fillRect(WALL_X - 14, SYS_Y - 70, 14, 140);
+  ctx.strokeStyle = 'rgba(79,168,213,0.2)';
+  ctx.lineWidth = 1;
+  for (let i = -60; i <= 60; i += 12) {
+    ctx.beginPath();
+    ctx.moveTo(WALL_X - 14, SYS_Y + i);
+    ctx.lineTo(WALL_X - 24, SYS_Y + i + 8);
+    ctx.stroke();
+  }
+}
+
+function drawSpring(x1, x2, y) {
+  const coils = 10;
+  const len = x2 - x1;
+  ctx.beginPath();
+  ctx.moveTo(x1, y);
+  for (let i = 0; i <= coils * 10; i++) {
+    const px = x1 + (i / (coils * 10)) * len;
+    const py = y + Math.sin(i / 10 * Math.PI * 2) * 14;
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.strokeStyle = '#4ad48a';
+  ctx.lineWidth = 1.8;
+  ctx.stroke();
+
+  // Label
+  ctx.fillStyle = 'rgba(74,212,138,0.6)';
+  ctx.font = 'italic 12px EB Garamond';
+  ctx.textAlign = 'center';
+  ctx.fillText('k', (x1 + x2) / 2, y - 22);
+}
+
+function drawDamper(x1, x2, y) {
+  const mid = (x1 + x2) / 2;
+  const h = 12;
+
+  ctx.strokeStyle = '#e05a3a';
+  ctx.lineWidth = 1.8;
+
+  // Rod
+  ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(mid - 15, y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(mid + 15, y); ctx.lineTo(x2, y); ctx.stroke();
+
+  // Cylinder
+  ctx.strokeRect(mid - 15, y - h, 30, h * 2);
+
+  // Piston
+  ctx.fillStyle = 'rgba(224,90,58,0.3)';
+  ctx.fillRect(mid - 8, y - h + 2, 16, h * 2 - 4);
+
+  // Label
+  ctx.fillStyle = 'rgba(224,90,58,0.6)';
+  ctx.font = 'italic 12px EB Garamond';
+  ctx.textAlign = 'center';
+  ctx.fillText('c', (x1 + x2) / 2, y + 30);
+}
+
+function drawMass(cx, cy) {
+  const size = 40 + Math.abs(x) * 4;
+  const z = zeta();
+  const col = getRegimeColor(z);
+
+  // Glow
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, size * 0.8);
+  grad.addColorStop(0, col + '44');
+  grad.addColorStop(1, col + '00');
+  ctx.beginPath(); ctx.arc(cx, cy, size * 0.8, 0, Math.PI * 2);
+  ctx.fillStyle = grad; ctx.fill();
+
+  // Mass box
+  ctx.fillStyle = col + '33';
+  ctx.strokeStyle = col;
+  ctx.lineWidth = 2;
+  ctx.fillRect(cx - size / 2, cy - size / 2, size, size);
+  ctx.strokeRect(cx - size / 2, cy - size / 2, size, size);
+
+  // m label
+  ctx.fillStyle = col;
+  ctx.font = 'italic bold 14px EB Garamond';
+  ctx.textAlign = 'center';
+  ctx.fillText('m', cx, cy + 5);
+}
+
+function drawEquilibrium(cx) {
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = 'rgba(79,168,213,0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(cx, 80); ctx.lineTo(cx, H - 80); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(79,168,213,0.4)';
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'center';
+  ctx.fillText('x=0', cx, 72);
+}
+
+function drawForceArrow(massX, massY) {
+  if (F0 === 0 || forceFreq === 0) return;
+  const force = F0 * Math.sin(2 * Math.PI * forceFreq * t);
+  const arrowLen = force * 20;
+  const ax = massX + 24;
+
+  ctx.strokeStyle = '#e8c547';
+  ctx.fillStyle = '#e8c547';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(ax, massY);
+  ctx.lineTo(ax + arrowLen, massY);
+  ctx.stroke();
+
+  if (Math.abs(arrowLen) > 5) {
+    const dir = arrowLen > 0 ? 1 : -1;
+    ctx.beginPath();
+    ctx.moveTo(ax + arrowLen, massY);
+    ctx.lineTo(ax + arrowLen - dir * 10, massY - 5);
+    ctx.lineTo(ax + arrowLen - dir * 10, massY + 5);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = 'rgba(232,197,71,0.6)';
+  ctx.font = 'italic 11px EB Garamond';
+  ctx.textAlign = 'center';
+  ctx.fillText('F(t)', ax + arrowLen / 2, massY - 12);
+}
+
+function drawGraph() {
+  const GX = 520, GY = 40, GW = W - GX - 20, GH = H - 80;
+
+  // Background
+  ctx.fillStyle = 'rgba(13,16,24,0.8)';
+  ctx.fillRect(GX, GY, GW, GH);
+  ctx.strokeStyle = 'rgba(79,168,213,0.2)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(GX, GY, GW, GH);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(79,168,213,0.06)';
+  for (let i = 1; i <= 4; i++) {
+    const y = GY + (i / 4) * GH;
+    ctx.beginPath(); ctx.moveTo(GX, y); ctx.lineTo(GX + GW, y); ctx.stroke();
+  }
+
+  // Zero line
+  ctx.strokeStyle = 'rgba(79,168,213,0.2)';
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath(); ctx.moveTo(GX, GY + GH / 2); ctx.lineTo(GX + GW, GY + GH / 2); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Displacement curve
+  if (history.length > 1) {
+    ctx.beginPath();
+    history.forEach((p, i) => {
+      const px = GX + (i / MAX_HIST) * GW;
+      const py = GY + GH / 2 - Math.min(1, p.x / 3) * GH * 0.45;
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    });
+    const z = zeta();
+    ctx.strokeStyle = getRegimeColor(z);
+    ctx.lineWidth = 1.8;
+    ctx.shadowBlur = 4; ctx.shadowColor = getRegimeColor(z);
+    ctx.stroke(); ctx.shadowBlur = 0;
+  }
+
+  // Labels
+  ctx.fillStyle = 'rgba(79,168,213,0.5)';
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'left';
+  ctx.fillText('x(t)', GX + 4, GY + 14);
+  ctx.textAlign = 'center';
+  ctx.fillText('time →', GX + GW / 2, GY + GH + 14);
+}
+
+function drawLabels() {
+  const z = zeta();
+  const w0 = omega0();
+  const col = getRegimeColor(z);
+
+  ctx.fillStyle = col;
+  ctx.font = 'italic 13px EB Garamond';
+  ctx.textAlign = 'left';
+  ctx.fillText(`ζ = ${z.toFixed(3)}`, 20, 28);
+  ctx.fillText(`ω₀ = ${w0.toFixed(2)} rad/s`, 20, 46);
+  ctx.fillText(`T = ${(2 * Math.PI / w0).toFixed(2)} s`, 20, 64);
+
+  // Update UI
+  document.getElementById('dispVal').textContent = x.toFixed(3) + ' m';
+  document.getElementById('velVal').textContent = v.toFixed(3) + ' m/s';
+  document.getElementById('zetaVal').textContent = z.toFixed(3);
+  const regEl = document.getElementById('regimeVal');
+  regEl.textContent = getRegimeText(z);
+  regEl.style.color = col;
+}
+
+function render(ts) {
+  if (!lastTs) lastTs = ts;
+  const dt = Math.min((ts - lastTs) / 1000, 0.05);
+  lastTs = ts;
+
+  if (playing) {
+    for (let i = 0; i < 4; i++) physicsStep(dt / 4);
+  }
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#07090e';
+  ctx.fillRect(0, 0, W, H);
+
+  const massX = toScreenX(x);
+  const massY = SYS_Y;
+
+  drawEquilibrium(EQUILIB_X);
+  drawWall();
+  drawSpring(WALL_X, massX - 24, massY - 18);
+  drawDamper(WALL_X, massX - 24, massY + 18);
+  drawMass(massX, massY);
+  drawForceArrow(massX, massY);
+  drawGraph();
+  drawLabels();
+
+  requestAnimationFrame(render);
+}
+
+// Controls
+document.getElementById('massSlider').addEventListener('input', e => {
+  m = parseFloat(e.target.value);
+  document.getElementById('massVal').textContent = m.toFixed(1) + ' kg';
+});
+
+document.getElementById('springSlider').addEventListener('input', e => {
+  k = parseFloat(e.target.value);
+  document.getElementById('springVal').textContent = k.toFixed(1) + ' N/m';
+});
+
+document.getElementById('dampSlider').addEventListener('input', e => {
+  c = parseFloat(e.target.value);
+  document.getElementById('dampVal').textContent = c.toFixed(2) + ' N·s/m';
+});
+
+document.getElementById('freqSlider').addEventListener('input', e => {
+  forceFreq = parseFloat(e.target.value);
+  F0 = forceFreq > 0 ? 5 : 0;
+  document.getElementById('freqVal').textContent = forceFreq.toFixed(2) + ' Hz';
+});
+
+function togglePlay() {
+  playing = !playing;
+  document.getElementById('playBtn').textContent = playing ? '⏸ Pause' : '▶ Play';
+}
+
+function resetSim() {
+  x = 1.5; v = 0; t = 0;
+  history.length = 0;
+}
+
+function kick() {
+  v += 3;
+}
+
+function setRegime(type) {
+  document.querySelectorAll('.regime-btn').forEach(b => b.classList.remove('active'));
+  if (type === 'under') {
+    m = 1; k = 10; c = 0.63; x = 1.5; v = 0;
+    document.querySelector('.regime-btn.underdamped').classList.add('active');
+  } else if (type === 'critical') {
+    m = 1; k = 10; c = 6.32; x = 1.5; v = 0;
+    document.querySelector('.regime-btn.critically').classList.add('active');
+  } else if (type === 'over') {
+    m = 1; k = 10; c = 15; x = 1.5; v = 0;
+    document.querySelector('.regime-btn.overdamped').classList.add('active');
+  } else if (type === 'resonance') {
+    m = 1; k = 10; c = 0.05; forceFreq = omega0() / (2 * Math.PI); F0 = 3;
+    document.getElementById('freqSlider').value = forceFreq;
+    document.getElementById('freqVal')
